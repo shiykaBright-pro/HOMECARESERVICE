@@ -1,0 +1,95 @@
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #333;
+  background-color: #f8f9fa;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Mobile-first base font size (16px base = 1rem) */
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%; /* Prevent iOS zoom on input focus */
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 480px) {
+  html {
+    font-size: 15px; /* Slightly smaller for narrow Android screens */
+  }
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  scroll-behavior: smooth;
+}
+
+a {
+  font-weight: 500;
+  color: #667eea;
+  text-decoration: none;
+  /* Touch-friendly */
+  display: inline-block;
+  min-height: 44px; /* iOS/Android touch target min */
+  line-height: 1.4;
+}
+
+a:hover {
+  color: #5568d3;
+}
+
+button, 
+input[type="submit"], 
+input[type="button"], 
+label.btn {
+  border-radius: 5px;
+  border: none;
+  padding: 0.75em 1.25em; /* Increased for touch */
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #667eea;
+  color: white;
+  cursor: pointer;
+  transition: all 0.25s;
+  /* Touch targets */
+  min-height: 44px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button:hover, button:focus-visible {
+  background-color: #5568d3;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #2c3e50;
+}
+
+/* Container max-widths for large screens */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 2rem;
+  }
+}
