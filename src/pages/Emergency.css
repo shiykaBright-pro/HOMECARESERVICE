@@ -1,0 +1,296 @@
+.emergency-page {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.particles-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.emergency-page > * {
+  position: relative;
+  z-index: 2;
+}
+
+.emergency-page {
+  background: radial-gradient(circle at 20% 50%, rgba(254, 242, 242, 0.8), transparent 50%),
+              radial-gradient(circle at 80% 20%, rgba(252, 231, 231, 0.6), transparent 50%),
+              linear-gradient(135deg, #fef2f2 0%, #fce7e7 100%);
+}
+
+
+.emergency-hero {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+  color: white;
+  padding: 100px 20px 80px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(220, 38, 38, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+
+.emergency-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
+
+.emergency-hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.emergency-icon {
+  font-size: 6rem;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 10px 20px rgba(220, 38, 38, 0.4));
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-15px); }
+  60% { transform: translateY(-8px); }
+}
+
+.emergency-hero h1 {
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  margin-bottom: 15px;
+  font-weight: 800;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.emergency-hero p {
+  font-size: 1.3rem;
+  opacity: 0.95;
+  margin-bottom: 0;
+}
+
+.emergency-contacts-full {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.emergency-contact-full {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(30px);
+  border-radius: 30px;
+  padding: 40px;
+  margin-bottom: 35px;
+  box-shadow: 0 25px 80px rgba(220, 38, 38, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+}
+
+
+.emergency-contact-full:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 30px 80px rgba(220, 38, 38, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+
+.emergency-contact-full:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 60px rgba(220, 38, 38, 0.25);
+}
+
+.contact-details h3 {
+  color: #dc2626;
+  margin-bottom: 10px;
+  font-size: 1.4rem;
+}
+
+.contact-number-large {
+  font-family: 'Courier New', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fef2f2, #fce7e7);
+  padding: 15px 25px;
+  border-radius: 15px;
+  color: #b91c1c;
+  display: inline-block;
+  box-shadow: inset 0 2px 10px rgba(185, 28, 28, 0.1);
+}
+
+.contact-actions-full {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.btn-emergency-full {
+  padding: 15px 30px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  min-width: 140px;
+  justify-content: center;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+.btn-emergency-full.call {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.btn-emergency-full.call:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(16, 185, 129, 0.4);
+}
+
+.btn-emergency-full.sms {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.btn-emergency-full.sms:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+}
+
+.btn-emergency-full.whatsapp {
+  background: linear-gradient(135deg, #25d366, #20b858);
+}
+
+.btn-emergency-full.whatsapp:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(37, 211, 102, 0.4);
+}
+
+.btn-copy {
+  padding: 12px 24px;
+  background: #6b7280;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-copy:hover {
+  background: #4b5563;
+}
+
+.emergency-info {
+  max-width: 900px;
+  margin: 60px auto;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.1);
+}
+
+.emergency-info h2 {
+  color: #dc2626;
+  margin-bottom: 25px;
+  font-size: 2rem;
+  text-align: center;
+}
+
+.emergency-info ul {
+  list-style: none;
+  padding: 0;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.emergency-info li {
+  background: #fef2f2;
+  margin-bottom: 15px;
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 5px solid #dc2626;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  position: relative;
+}
+
+.emergency-info li::before {
+  content: '⚠️';
+  margin-right: 12px;
+  font-size: 1.2rem;
+}
+
+.emergency-back {
+  text-align: center;
+  margin-top: 40px;
+}
+
+.btn-back-home {
+  display: inline-block;
+  padding: 15px 40px;
+  background: #6b7280;
+  color: white;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(107, 114, 128, 0.3);
+}
+
+.btn-back-home:hover {
+  background: #4b5563;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(107, 114, 128, 0.4);
+}
+
+@media (max-width: 768px) {
+  .emergency-hero {
+    padding: 60px 15px 40px;
+  }
+  
+  .emergency-hero h1 {
+    font-size: 2rem;
+  }
+  
+  .emergency-contact-full {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  
+  .contact-actions-full {
+    order: -1;
+  }
+  
+  .btn-emergency-full {
+    min-width: 120px;
+    padding: 12px 20px;
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .emergency-contact-full {
+    padding: 20px 15px;
+  }
+  
+  .contact-number-large {
+    font-size: 1.5rem;
+  }
+}

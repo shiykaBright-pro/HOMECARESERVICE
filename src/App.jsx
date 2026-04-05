@@ -13,6 +13,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Messages from './pages/Messages';
 import Reviews from './pages/Reviews';
 import VideoCall from './components/VideoCall';
+import Emergency from './pages/Emergency';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
           <Route path="/about" element={<About />} />
           <Route path="/services" element={<Services />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/emergency" element={<Emergency />} />
 
 <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

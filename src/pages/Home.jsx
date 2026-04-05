@@ -1,8 +1,20 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import './Home.css';
 
 function Home() {
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
+
+  const emergencyNumbers = [
+    { name: 'John Doe (Patient Support)', phone: '+237 679109117' },
+    { name: 'Jane Doe (Emergency)', phone: '+237 673233297' },
+    { name: 'Emergency Response', phone: '+237 673239967' }
+  ];
+
+  const openEmergencyModal = () => setShowEmergencyModal(true);
+  const closeEmergencyModal = () => setShowEmergencyModal(false);
+
   return (
     <div className="home">
       <Navbar />
@@ -153,6 +165,33 @@ function Home() {
       </section>
 
       {/* Footer */}
+      {showEmergencyModal && (
+        <div className="emergency-modal-overlay" onClick={closeEmergencyModal}>
+          <div className="emergency-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="emergency-modal-header">
+              <h2>🚨 Emergency Contacts</h2>
+              <button className="modal-close" onClick={closeEmergencyModal}>×</button>
+            </div>
+            <div className="emergency-numbers">
+              {emergencyNumbers.map((contact, index) => (
+                <div key={index} className="emergency-contact">
+                  <div className="contact-name">{contact.name}</div>
+                  <div className="contact-number">{contact.phone}</div>
+                  <div className="contact-actions">
+                    <a href={`tel:${contact.phone}`} className="btn-call">📞 Call</a>
+                    <a href={`sms:${contact.phone}`} className="btn-sms">💬 SMS</a>
+                    <a href={`https://wa.me/${contact.phone.replace(/[^0-9+]/g, '')}`} className="btn-whatsapp" target="_blank" rel="noopener noreferrer">💚 WhatsApp</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="emergency-footer">
+              <p>Stay safe! Professional help is here for you 24/7.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <footer className="footer-modern">
         <div className="footer-content">
           <div className="footer-brand">

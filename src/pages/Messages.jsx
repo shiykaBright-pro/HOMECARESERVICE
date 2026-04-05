@@ -196,8 +196,46 @@ function Messages() {
       <Navbar />
       <div className="messages-container">
         <div className="messages-sidebar">
-          <div className="messages-header">
+  <div className="messages-header">
             <h2>💬 Messages</h2>
+          </div>
+          
+          {/* Emergency Contacts Section */}
+          <div className="emergency-contacts-section">
+            <h3>🚨 Emergency Contacts</h3>
+            <div className="emergency-contact-item">
+              <div>
+                <strong>John Doe (Patient Support)</strong><br />
+                +237 679109117
+              </div>
+              <div className="emergency-actions">
+                <a href="tel:+237679109117" className="btn-emergency-call">📞</a>
+                <a href="sms:+237679109117" className="btn-emergency-sms">💬</a>
+                <a href="https://wa.me/237679109117" className="btn-emergency-wa" target="_blank" rel="noopener">💚</a>
+              </div>
+            </div>
+            <div className="emergency-contact-item">
+              <div>
+                <strong>Jane Doe (Emergency)</strong><br />
+                +237 673233297
+              </div>
+              <div className="emergency-actions">
+                <a href="tel:+237673233297" className="btn-emergency-call">📞</a>
+                <a href="sms:+237673233297" className="btn-emergency-sms">💬</a>
+                <a href="https://wa.me/237673233297" className="btn-emergency-wa" target="_blank" rel="noopener">💚</a>
+              </div>
+            </div>
+            <div className="emergency-contact-item">
+              <div>
+                <strong>Emergency Response</strong><br />
+                +237 673239967
+              </div>
+              <div className="emergency-actions">
+                <a href="tel:+237673239967" className="btn-emergency-call">📞</a>
+                <a href="sms:+237673239967" className="btn-emergency-sms">💬</a>
+                <a href="https://wa.me/237673239967" className="btn-emergency-wa" target="_blank" rel="noopener">💚</a>
+              </div>
+            </div>
           </div>
           
           {/* Category Dropdown - navigates to dashboards */}
