@@ -137,19 +137,8 @@ function Emergency() {
         </div>
       </div>
 
-      <div className="emergency-info">
-        <h2>⚠️ When to Call Emergency</h2>
-        <ul>
-          <li>Difficulty breathing or chest pain</li>
-          <li>Severe bleeding that doesn't stop</li>
-          <li>Sudden confusion or loss of consciousness</li>
-          <li>Signs of stroke (FAST: Face, Arms, Speech, Time)</li>
-          <li>Severe allergic reactions</li>
-          <li>Any life-threatening situation</li>
-        </ul>
-        <div className="emergency-back">
-          <Link to="/" className="btn-back-home">← Back to Home</Link>
-        </div>
+      <div className="emergency-back">
+        <Link to="/" className="btn-back-home">← Back to Home</Link>
       </div>
     </div>
   );

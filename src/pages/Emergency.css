@@ -23,7 +23,6 @@
               linear-gradient(135deg, #fef2f2 0%, #fce7e7 100%);
 }
 
-
 .emergency-hero {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
   color: white;
@@ -34,7 +33,6 @@
   box-shadow: 0 20px 60px rgba(220, 38, 38, 0.4);
   backdrop-filter: blur(10px);
 }
-
 
 .emergency-hero::before {
   content: '';
@@ -58,13 +56,12 @@
   font-size: 6rem;
   margin-bottom: 20px;
   filter: drop-shadow(0 10px 20px rgba(220, 38, 38, 0.4));
-  animation: bounce 2s infinite;
+  animation: pulse 2s infinite;
 }
 
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-15px); }
-  60% { transform: translateY(-8px); }
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 .emergency-hero h1 {
@@ -72,18 +69,23 @@
   margin-bottom: 15px;
   font-weight: 800;
   text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  letter-spacing: -0.02em;
 }
 
 .emergency-hero p {
   font-size: 1.3rem;
   opacity: 0.95;
   margin-bottom: 0;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.6;
 }
 
 .emergency-contacts-full {
   max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 60px 20px;
 }
 
 .emergency-contact-full {
@@ -92,7 +94,10 @@
   border-radius: 30px;
   padding: 40px;
   margin-bottom: 35px;
-  box-shadow: 0 25px 80px rgba(220, 38, 38, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  box-shadow: 
+    0 25px 80px rgba(220, 38, 38, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.15);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -101,34 +106,44 @@
   gap: 30px;
 }
 
-
 .emergency-contact-full:hover {
-  transform: translateY(-10px) scale(1.02);
-  box-shadow: 0 30px 80px rgba(220, 38, 38, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.3);
+  transform: translateY(-12px) scale(1.02);
+  box-shadow: 
+    0 35px 100px rgba(220, 38, 38, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 
-
-.emergency-contact-full:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 60px rgba(220, 38, 38, 0.25);
+.contact-avatar {
+  font-size: 4rem;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .contact-details h3 {
   color: #dc2626;
   margin-bottom: 10px;
   font-size: 1.4rem;
+  font-weight: 700;
 }
 
 .contact-number-large {
-  font-family: 'Courier New', monospace;
-  font-size: 2rem;
+  font-family: 'SF Mono', 'Courier New', monospace;
+  font-size: 2.2rem;
   font-weight: 700;
   background: linear-gradient(135deg, #fef2f2, #fce7e7);
-  padding: 15px 25px;
-  border-radius: 15px;
+  padding: 18px 30px;
+  border-radius: 20px;
   color: #b91c1c;
   display: inline-block;
-  box-shadow: inset 0 2px 10px rgba(185, 28, 28, 0.1);
+  box-shadow: 
+    inset 0 2px 10px rgba(185, 28, 28, 0.1),
+    0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
 .contact-actions-full {
@@ -138,19 +153,36 @@
 }
 
 .btn-emergency-full {
-  padding: 15px 30px;
+  padding: 16px 32px;
   border-radius: 50px;
   text-decoration: none;
   font-weight: 700;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   gap: 10px;
   color: white;
   min-width: 140px;
   justify-content: center;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-emergency-full::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s;
+}
+
+.btn-emergency-full:hover::before {
+  left: 100%;
 }
 
 .btn-emergency-full.call {
@@ -158,8 +190,8 @@
 }
 
 .btn-emergency-full.call:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(16, 185, 129, 0.4);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
 }
 
 .btn-emergency-full.sms {
@@ -167,8 +199,8 @@
 }
 
 .btn-emergency-full.sms:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(59, 130, 246, 0.4);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
 }
 
 .btn-emergency-full.whatsapp {
@@ -176,121 +208,213 @@
 }
 
 .btn-emergency-full.whatsapp:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 35px rgba(37, 211, 102, 0.4);
+  transform: translateY(-4px) scale(1.05);
+  box-shadow: 0 15px 40px rgba(37, 211, 102, 0.4);
 }
 
 .btn-copy {
-  padding: 12px 24px;
-  background: #6b7280;
+  padding: 14px 26px;
+  background: linear-gradient(135deg, #6b7280, #4b5563);
   color: white;
   border: none;
   border-radius: 25px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(107, 114, 128, 0.3);
 }
 
 .btn-copy:hover {
-  background: #4b5563;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(107, 114, 128, 0.4);
 }
 
-.emergency-info {
-  max-width: 900px;
+.location-section {
+  max-width: 1000px;
   margin: 60px auto;
-  padding: 40px 20px;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 15px 50px rgba(0,0,0,0.1);
-}
-
-.emergency-info h2 {
-  color: #dc2626;
-  margin-bottom: 25px;
-  font-size: 2rem;
+  padding: 0 20px;
   text-align: center;
 }
 
-.emergency-info ul {
-  list-style: none;
-  padding: 0;
-  max-width: 600px;
-  margin: 0 auto;
+.location-section h3 {
+  color: #dc2626;
+  font-size: 2rem;
+  margin-bottom: 30px;
 }
 
-.emergency-info li {
-  background: #fef2f2;
-  margin-bottom: 15px;
-  padding: 20px;
-  border-radius: 12px;
-  border-left: 5px solid #dc2626;
+.btn-location {
+  padding: 18px 40px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  border-radius: 50px;
   font-size: 1.1rem;
-  line-height: 1.6;
-  position: relative;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 12px 35px rgba(59, 130, 246, 0.3);
 }
 
-.emergency-info li::before {
-  content: '⚠️';
-  margin-right: 12px;
-  font-size: 1.2rem;
+.btn-location:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 45px rgba(59, 130, 246, 0.4);
+}
+
+.location-display {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  padding: 25px 40px;
+  border-radius: 20px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #1f2937;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.location-error {
+  color: #dc2626;
+  font-size: 1.1rem;
+  background: rgba(254, 242, 242, 0.8);
+  padding: 20px;
+  border-radius: 15px;
+  border-left: 5px solid #dc2626;
+}
+
+.emergency-timer {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.timer-circle {
+  width: 250px;
+  height: 250px;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 
+    0 30px 80px rgba(220, 38, 38, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 30px 80px rgba(220, 38, 38, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2); }
+  50% { box-shadow: 0 30px 80px rgba(220, 38, 38, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
+  100% { box-shadow: 0 30px 80px rgba(220, 38, 38, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2); }
+}
+
+.timer-text {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+.timer-number {
+  color: white;
+  font-size: 3.5rem;
+  font-weight: 800;
+  text-shadow: 0 4px 15px rgba(0,0,0,0.4);
+  font-family: 'SF Mono', monospace;
 }
 
 .emergency-back {
   text-align: center;
-  margin-top: 40px;
+  margin: 60px 0;
+  padding: 40px 20px;
 }
 
 .btn-back-home {
-  display: inline-block;
-  padding: 15px 40px;
-  background: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 45px;
+  background: linear-gradient(135deg, #6b7280, #4b5563);
   color: white;
   text-decoration: none;
   border-radius: 50px;
-  font-weight: 600;
-  font-size: 1.1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 8px 25px rgba(107, 114, 128, 0.3);
+  font-weight: 700;
+  font-size: 1.2rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 12px 35px rgba(107, 114, 128, 0.3);
 }
 
 .btn-back-home:hover {
-  background: #4b5563;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 35px rgba(107, 114, 128, 0.4);
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 18px 50px rgba(107, 114, 128, 0.4);
+  background: linear-gradient(135deg, #4b5563, #374151);
 }
 
+/* Mobile Perfection */
 @media (max-width: 768px) {
   .emergency-hero {
-    padding: 60px 15px 40px;
+    padding: 70px 20px 50px;
   }
   
   .emergency-hero h1 {
-    font-size: 2rem;
+    font-size: 2.2rem;
   }
   
   .emergency-contact-full {
     flex-direction: column;
     text-align: center;
-    gap: 20px;
+    gap: 25px;
+    padding: 30px 25px;
   }
   
   .contact-actions-full {
     order: -1;
+    width: 100%;
+    justify-content: center;
   }
   
   .btn-emergency-full {
     min-width: 120px;
-    padding: 12px 20px;
+    padding: 14px 24px;
     font-size: 0.95rem;
+    flex: 1;
+  }
+  
+  .contact-number-large {
+    font-size: 1.8rem;
+    padding: 15px 25px;
+  }
+  
+  .timer-circle {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .timer-number {
+    font-size: 2.8rem;
   }
 }
 
 @media (max-width: 480px) {
   .emergency-contact-full {
-    padding: 20px 15px;
+    padding: 25px 20px;
+    margin-bottom: 25px;
   }
   
   .contact-number-large {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
+  }
+  
+  .contact-actions-full {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .btn-emergency-full {
+    min-width: unset;
+    width: 100%;
   }
 }
+
