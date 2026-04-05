@@ -1,13 +1,7 @@
-# Mobile Responsiveness Fix TODO
+# Task: Remove Quick Demo Login buttons from Login page
 
-## Status: In Progress
-
-### 1. [ ] Add global mobile-first base styles to src/index.css
-### 2. [ ] Update Navbar.css for mobile hamburger menu + vertical stack
-### 3. [ ] Update Navbar.jsx with mobile menu state/toggle logic
-### 4. [ ] Adjust Home.css hero padding for mobile navbar height
-### 5. [ ] Standardize touch targets / test breakpoints
-### 6. [ ] Test & Complete (attempt_completion)
-
-**Next Step:** Global CSS updates
+## TODO Steps (Approved Plan):
+- [x] Step 1: Edit HOMECARESERVICE/src/pages/Login.jsx to remove handleQuickLogin function and quick-login div
+- [x] Step 2: Verified change by reading Login.jsx - Quick Demo Login removed successfully
+- [x] Step 3: Task complete
 
