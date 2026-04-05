@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../lib/firebase.js';
 
 const AppContext = createContext();
 
@@ -237,6 +239,38 @@ export function AppProvider({ children }) {
     setCurrentUser(null);
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
+      const userEmail = firebaseUser.email;
+      
+      // Check if user exists in local users
+      let user = users.find(u => u.email === userEmail);
+      
+      if (!user) {
+        // Create new patient user
+        user = {
+          id: users.length + 1,
+          name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+          email: userEmail,
+          role: 'patient',
+          status: 'active',
+          joinDate: new Date().toISOString().split('T')[0],
+          authProvider: 'google'
+        };
+        setUsers([...users, user]);
+      }
+      
+      setCurrentUser(user);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+      return { success: true, user };
+    } catch (error) {
+      console.error('Google login error:', error);
+      return { success: false, error: error.message || 'Google login failed' };
+    }
+  };
+
   // Appointment functions
   const addAppointment = (appointment) => {
     const newAppointment = { ...appointment, id: appointments.length + 1, status: 'Pending' };
@@ -393,6 +427,7 @@ export function AppProvider({ children }) {
     login,
     register,
     logout,
+    loginWithGoogle,
     
     // Appointments
     appointments,

@@ -608,7 +608,7 @@ function AdminDashboard() {
           <a href="#services" className={activeTab === 'services' ? 'active' : ''} onClick={() => {setActiveTab('services'); setSidebarOpen(false);}}>Services</a>
           <a href="#reports" className={activeTab === 'reports' ? 'active' : ''} onClick={() => {setActiveTab('reports'); setSidebarOpen(false);}}>Reports</a>
           <a href="#settings" className={activeTab === 'settings' ? 'active' : ''} onClick={() => {setActiveTab('settings'); setSidebarOpen(false);}}>Settings</a>
-          <Link to="/" onClick={() => setSidebarOpen(false)}>Logout</Link>
+          <a href="#logout" onClick={() => { navigate('/'); setSidebarOpen(false); }}>Logout</a>
         </nav>
       </aside>
 

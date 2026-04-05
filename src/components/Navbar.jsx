@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useState, useEffect, useRef } from 'react';
 import './Navbar.css';
@@ -12,8 +12,10 @@ function Navbar() {
   
   const unreadCount = notifications.filter(n => !n.read && n.userId === currentUser?.id).length;
 
+  const navigate = useNavigate();
   const handleLogout = () => {
     logout();
+    navigate('/');
     setIsMenuOpen(false);
   };
 

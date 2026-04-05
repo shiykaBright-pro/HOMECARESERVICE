@@ -175,7 +175,7 @@ function PatientDashboard() {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/login');
   };
 
   // Filter functions
@@ -672,6 +672,11 @@ function PatientDashboard() {
       <main className="dashboard-content">
         <header className="dashboard-header">
           <h1>Welcome, {currentUser?.name || 'Patient'}!</h1>
+          <div className="profile-icon-container">
+            <button className="profile-icon-btn" onClick={() => setActiveTab('profile')}>
+              <div className="profile-avatar-small">{currentUser?.name?.charAt(0) || 'P'}</div>
+            </button>
+          </div>
         </header>
         {renderContent()}
       </main>
