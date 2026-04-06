@@ -352,6 +352,92 @@
   background: linear-gradient(135deg, #4b5563, #374151);
 }
 
+/* Emergency Alarm Button Styles */
+body.alarm-flash {
+  animation: alarmFlash 0.2s infinite;
+}
+
+@keyframes alarmFlash {
+  0%, 100% { 
+    background-color: rgba(220, 38, 38, 0.1); 
+    filter: brightness(1);
+  }
+  50% { 
+    background-color: rgba(220, 38, 38, 0.3); 
+    filter: brightness(1.2);
+  }
+}
+
+.btn-alarm {
+  padding: 22px 42px;
+  background: linear-gradient(135deg, #dc2626, #b91c1c, #991b1b);
+  color: white !important;
+  border: none;
+  border-radius: 30px;
+  font-weight: 900;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  box-shadow: 
+    0 20px 50px rgba(220, 38, 38, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  min-width: 240px;
+  margin: 0 8px;
+  animation: alarmPulse 1.8s infinite;
+  z-index: 20;
+  font-family: inherit;
+}
+
+.btn-alarm::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.7s ease;
+}
+
+.btn-alarm:hover::before {
+  left: 100%;
+}
+
+.btn-alarm:hover {
+  transform: translateY(-10px) scale(1.06);
+  box-shadow: 
+    0 30px 70px rgba(220, 38, 38, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.btn-alarm:active {
+  transform: scale(0.97) !important;
+  animation: none;
+}
+
+@keyframes alarmPulse {
+  0%, 100% { 
+    box-shadow: 
+      0 20px 50px rgba(220, 38, 38, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  50% { 
+    box-shadow: 
+      0 20px 50px rgba(220, 38, 38, 0.9),
+      0 0 40px rgba(220, 38, 38, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+}
+
+.contact-actions-full {
+  gap: 12px !important;
+  flex-wrap: wrap;
+}
+
 /* Mobile Perfection */
 @media (max-width: 768px) {
   .emergency-hero {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import ParticlesCanvas from '../components/ParticlesCanvas';
@@ -8,6 +8,7 @@ function Emergency() {
   const [copied, setCopied] = useState('');
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState('');
+  const audioContextRef = useRef(null);
 
   const emergencyNumbers = [
     { 
@@ -34,6 +35,41 @@ function Emergency() {
     });
   };
 
+  const playAlarm = useCallback(() => {
+    let audioContext = audioContextRef.current;
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      audioContextRef.current = audioContext;
+    }
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+
+    const playSirenTone = (startFreq, endFreq, duration = 0.5) => {
+      const now = audioContext.currentTime;
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.linearRampToValueAtTime(endFreq, now + duration);
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+      osc.connect(gain).connect(audioContext.destination);
+      osc.type = 'sawtooth';
+
+      osc.start(now);
+      osc.stop(now + duration);
+    };
+
+    // Multi-tone siren alarm: 4 tones
+    playSirenTone(800, 1100);
+    setTimeout(() => playSirenTone(1100, 800), 600);
+    setTimeout(() => playSirenTone(800, 1100), 1300);
+    setTimeout(() => playSirenTone(1100, 800), 2000);
+  }, [audioContextRef]);
+
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       setLocationError('Geolocation not supported');
@@ -52,6 +88,31 @@ function Emergency() {
       }
     );
   };
+
+  const handleAlarm = useCallback((phone, location) => {
+    playAlarm();
+
+    if ('vibrate' in navigator) {
+      navigator.vibrate([300, 100, 300, 100, 300]);
+    }
+
+    document.body.classList.add('alarm-flash');
+    setTimeout(() => {
+      document.body.classList.remove('alarm-flash');
+    }, 1200);
+
+    const locStr = location ? ` Lat:${location.lat}, Lng:${location.lng}` : '';
+    const message = `🚨 EMERGENCY ALARM ACTIVATED! Urgent help needed NOW!${locStr}`;
+
+    const smsUrl = `sms:${phone}?body=${encodeURIComponent(message)}`;
+    window.location.href = smsUrl;
+
+    setTimeout(() => {
+      const cleanPhone = phone.replace(/[^+\d]/g, '');
+      const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+      window.open(waUrl, '_blank');
+    }, 200);
+  }, [location, playAlarm]);
 
   const PhoneIcon = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -105,7 +166,13 @@ function Emergency() {
                 WHATSAPP
               </a>
               <button onClick={() => copyNumber(contact.phone)} className="btn-copy">
-                {copied === contact.phone ? '✅ Copied!' : '📋 Copy'}
+{copied === contact.phone ? '✅ Copied!' : '📋 Copy'}
+              </button>
+              <button
+                className="btn-alarm"
+                onClick={() => handleAlarm(contact.phone, location)}
+              >
+                🚨 EMERGENCY ALARM
               </button>
             </div>
           </div>
