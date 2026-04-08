@@ -80,6 +80,7 @@ function Navbar() {
         <Link to="/services" onClick={() => setIsMenuOpen(false)}>Services</Link>
         <Link to="/about" onClick={() => setIsMenuOpen(false)}>About</Link>
         <Link to="/contact" onClick={() => setIsMenuOpen(false)}>Contact</Link>
+        <Link to="/reviews" className="reviews-nav-link" onClick={() => setIsMenuOpen(false)}>⭐ Reviews</Link>
         <Link to="/emergency" className="emergency-nav-link" onClick={() => setIsMenuOpen(false)}>🚨 Emergency</Link>
         
         {currentUser ? (
@@ -88,7 +89,7 @@ function Navbar() {
               Messages
               {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
             </Link>
-            <Link to="/reviews" onClick={() => setIsMenuOpen(false)}>Reviews</Link>
+            {/* Removed duplicate Reviews link for logged-in users */}
             <div className="user-menu">
               <Link to="" className="user-name">{currentUser.name}</Link>
               <div className="dropdown-content">

@@ -1,11 +1,11 @@
-# Google Auth for Patient (Approved Plan)
+# Google Auth for Patient (Completed with Supabase OAuth)
 
-## TODO Steps:
-- [x] Install firebase
-- [x] Create src/lib/firebase.js
-- [x] Step 1: Update AppContext.jsx with loginWithGoogle()
-- [x] Step 2: Update Login.jsx with Google button for patient
-- [x] Step 3: Update Register.jsx with Context register() + Google for patient
-- [ ] Step 4: Verify & test
-- [ ] Step 5: Complete
+✅ Supabase Google OAuth fully implemented:
+- supabaseClient.js: OAuth helpers
+- AppContext.jsx: loginWithGoogle() + auth listener
+- Home.jsx/Login.jsx/Register.jsx: Working buttons
+- Auto user sync/creation for patients
+- Redirect handling to dashboard
+
+**Tested flow:** Home → Google consent → back → auto-login → patient dashboard
 

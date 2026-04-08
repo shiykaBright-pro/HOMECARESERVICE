@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '../lib/firebase.js';
+import { useNavigate } from 'react-router-dom';
+import { supabase, googleLogin, supabaseLogout } from "../supabaseClient.js";
 
 const AppContext = createContext();
 
@@ -235,36 +235,15 @@ export function AppProvider({ children }) {
     return { success: true, user: newUser };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabaseLogout();
     setCurrentUser(null);
   };
 
   const loginWithGoogle = async () => {
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const firebaseUser = result.user;
-      const userEmail = firebaseUser.email;
-      
-      // Check if user exists in local users
-      let user = users.find(u => u.email === userEmail);
-      
-      if (!user) {
-        // Create new patient user
-        user = {
-          id: users.length + 1,
-          name: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-          email: userEmail,
-          role: 'patient',
-          status: 'active',
-          joinDate: new Date().toISOString().split('T')[0],
-          authProvider: 'google'
-        };
-        setUsers([...users, user]);
-      }
-      
-      setCurrentUser(user);
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      return { success: true, user };
+      await googleLogin();
+      return { success: true };
     } catch (error) {
       console.error('Google login error:', error);
       return { success: false, error: error.message || 'Google login failed' };
@@ -419,6 +398,51 @@ export function AppProvider({ children }) {
       newUsersThisMonth: users.filter(u => u.joinDate?.startsWith('2026-02')).length
     };
   };
+
+  // Supabase auth listener
+  useEffect(() => {
+    // Handle initial auth state on mount/redirect
+    const handleAuthChange = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const userEmail = user.email;
+          let appUser = users.find(u => u.email === userEmail);
+          
+          if (!appUser) {
+            // Create new patient user
+            appUser = {
+              id: users.length + 1,
+              name: user.user_metadata?.full_name || userEmail.split('@')[0],
+              email: userEmail,
+              role: 'patient',
+              status: 'active',
+              joinDate: new Date().toISOString().split('T')[0],
+              authProvider: 'google'
+            };
+            setUsers([...users, appUser]);
+          }
+          
+          setCurrentUser(appUser);
+          localStorage.setItem('currentUser', JSON.stringify(appUser));
+        }
+      }
+    };
+
+    handleAuthChange();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        handleAuthChange();
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        localStorage.removeItem('currentUser');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [users]);
 
   const value = {
     // Users

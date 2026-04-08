@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import Navbar from '../components/Navbar';
-import { auth, googleProvider } from '../lib/firebase.js';
-import { signInWithPopup } from 'firebase/auth';
+import { supabase } from '../supabaseClient.js';
 import './Register.css';
 
 function Register() {
@@ -135,26 +134,25 @@ function Register() {
       licenseNumber: formData.licenseNumber
     };
 
-    const result = register(userData);
-    if (result.success) {
-      switch (userData.role) {
-        case 'patient':
-          navigate('/dashboard/patient');
-          break;
-        case 'doctor':
-          navigate('/dashboard/doctor');
-          break;
-        case 'nurse':
-          navigate('/dashboard/nurse');
-          break;
-        case 'admin':
-          navigate('/dashboard/admin');
-          break;
-        default:
-          navigate('/dashboard/patient');
+    const { data, error } = await supabase.auth.signUp({
+      email: formData.email,
+      password: formData.password,
+      options: {
+        data: {
+          role: formData.role,
+          name: formData.name,
+          phone: formData.phone,
+          specialty: formData.specialty,
+          licenseNumber: formData.licenseNumber
+        }
       }
+    });
+    
+    if (error) {
+      setError(error.message);
     } else {
-      setError(result.error);
+      register(userData);
+      navigate('/');
     }
     setLoading(false);
   };

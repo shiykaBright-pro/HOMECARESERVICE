@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import Navbar from '../components/Navbar';
-import { auth, googleProvider } from '../lib/firebase.js';
-import { signInWithPopup } from 'firebase/auth';
+import { supabase } from '../supabaseClient.js';
 import './Login.css';
 
 function Login() {
@@ -48,27 +47,16 @@ function Login() {
       return;
     }
 
-    const result = login(formData.email, formData.password);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: formData.email,
+      password: formData.password
+    });
     
-    if (result.success) {
-      switch(result.user.role) {
-        case 'patient':
-          navigate('/dashboard/patient');
-          break;
-        case 'doctor':
-          navigate('/dashboard/doctor');
-          break;
-        case 'nurse':
-          navigate('/dashboard/nurse');
-          break;
-        case 'admin':
-          navigate('/dashboard/admin');
-          break;
-        default:
-          navigate('/dashboard/patient');
-      }
+    if (error) {
+      setError(error.message);
     } else {
-      setError(result.error);
+      login({ email: formData.email, role: formData.role });
+      navigate('/');
     }
     setLoading(false);
   };

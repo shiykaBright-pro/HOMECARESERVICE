@@ -225,6 +225,21 @@
   animation: pulse 2s infinite;
 }
 
+.reviews-nav-link {
+  background: rgba(243, 156, 18, 0.2);
+  border: 2px solid rgba(243, 156, 18, 0.5);
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+}
+
+.reviews-nav-link:hover {
+  background: rgba(243, 156, 18, 0.3);
+  border-color: #f39c12;
+  color: #ffd700 !important;
+  transform: scale(1.05);
+}
+
 .emergency-nav-link:hover {
   background: rgba(231, 76, 60, 0.3);
   border-color: #e74c3c;

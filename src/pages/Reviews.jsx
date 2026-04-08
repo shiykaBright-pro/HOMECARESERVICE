@@ -1,269 +1,130 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useApp } from '../context/AppContext';
+import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
 import './Reviews.css';
 
 function Reviews() {
-  const { currentUser, users, reviews, addReview, getProviderReviews } = useApp();
-  const [showAddReview, setShowAddReview] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState(null);
-  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
-  const [filterRating, setFilterRating] = useState(0);
+  const [activeTab, setActiveTab] = useState('providers');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Get doctors and nurses that can be reviewed
-  const getProviders = () => {
-    return users.filter(u => u.role === 'doctor' || u.role === 'nurse');
-  };
+  // Sample data - replace with real data from context
+  const providers = [
+    { id: 1, name: 'Dr. Sarah Johnson', specialty: 'Cardiology', rating: 4.8, reviews: 124, avatar: 'SJ' },
+    { id: 2, name: 'Nurse Emily Davis', specialty: 'General Nursing', rating: 4.9, reviews: 89, avatar: 'ED' },
+    { id: 3, name: 'Dr. Michael Chen', specialty: 'Pediatrics', rating: 4.7, reviews: 156, avatar: 'MC' },
+    { id: 4, name: 'Nurse Lisa Rodriguez', specialty: 'Wound Care', rating: 4.6, reviews: 67, avatar: 'LR' },
+  ];
 
-  const handleSubmitReview = (e) => {
-    e.preventDefault();
-    if (!selectedProvider || !reviewForm.comment.trim()) return;
+  const recentReviews = [
+    { patient: 'John Smith', provider: 'Dr. Sarah Johnson', rating: 5, comment: 'Excellent care, very professional!', date: '2024-01-15' },
+    { patient: 'Mary Wilson', provider: 'Nurse Emily Davis', rating: 4, comment: 'Compassionate and thorough.', date: '2024-01-14' },
+  ];
 
-    addReview({
-      patientId: currentUser.id,
-      patientName: currentUser.name,
-      providerId: selectedProvider.id,
-      providerName: selectedProvider.name,
-      rating: reviewForm.rating,
-      comment: reviewForm.comment.trim()
-    });
-
-    setShowAddReview(false);
-    setSelectedProvider(null);
-    setReviewForm({ rating: 5, comment: '' });
-    alert('Review submitted successfully!');
-  };
-
-  // Calculate average rating
-  const getAverageRating = (providerId) => {
-    const providerReviews = getProviderReviews(providerId);
-    if (providerReviews.length === 0) return 0;
-    const sum = providerReviews.reduce((acc, r) => acc + r.rating, 0);
-    return (sum / providerReviews.length).toFixed(1);
-  };
-
-  // Get reviews for display
-  const getDisplayReviews = (providerId) => {
-    let providerReviews = getProviderReviews(providerId);
-    if (filterRating > 0) {
-      providerReviews = providerReviews.filter(r => r.rating >= filterRating);
-    }
-    return providerReviews;
-  };
-
-  // Render star rating
-  const renderStars = (rating, interactive = false, onChange = () => {}) => {
-    return (
-      <div className="star-rating">
-        {[1, 2, 3, 4, 5].map(star => (
-          <span
-            key={star}
-            className={`star ${star <= rating ? 'filled' : ''} ${interactive ? 'interactive' : ''}`}
-            onClick={() => interactive && onChange(star)}
-          >
-            ★
-          </span>
-        ))}
-      </div>
-    );
-  };
-
-  if (!currentUser) {
-    return (
-      <div className="reviews-page">
-        <Navbar />
-        <div className="reviews-container">
-          <div className="login-required">
-            <h2>Please login to view and write reviews</h2>
-            <Link to="/login" className="btn-primary">Login</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const filteredProviders = providers.filter(p => 
+    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="reviews-page">
       <Navbar />
-      <div className="reviews-container">
-        <div className="reviews-header">
-          <h1>Reviews & Ratings</h1>
-          <p>Rate and review your healthcare providers</p>
-          {currentUser.role === 'patient' && (
-            <button 
-              className="btn-add-review"
-              onClick={() => setShowAddReview(!showAddReview)}
-            >
-              {showAddReview ? 'Cancel' : '+ Write a Review'}
-            </button>
-          )}
+      <div className="reviews-wrapper">
+        {/* Hero Section */}
+        <div className="reviews-hero">
+          <div className="hero-content">
+            <h1>Patient Reviews</h1>
+            <p>See what our patients say about our care providers</p>
+            <div className="overall-rating">
+              <span className="avg-score">4.8</span>
+              <span>★ (456 reviews)</span>
+            </div>
+          </div>
         </div>
 
-        {/* Add Review Form */}
-        {showAddReview && (
-          <div className="add-review-section">
-            <h2>Write a Review</h2>
-            <form onSubmit={handleSubmitReview}>
-              <div className="form-group">
-                <label>Select Provider</label>
-                <select 
-                  value={selectedProvider?.id || ''}
-                  onChange={(e) => setSelectedProvider(getProviders().find(p => p.id === parseInt(e.target.value)))}
-                  required
-                >
-                  <option value="">Choose a provider...</option>
-                  {getProviders().map(provider => (
-                    <option key={provider.id} value={provider.id}>
-                      {provider.name} - {provider.role === 'doctor' ? provider.specialty : 'Nurse'}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="form-group">
-                <label>Rating</label>
-                {renderStars(reviewForm.rating, true, (rating) => 
-                  setReviewForm({ ...reviewForm, rating })
-                )}
-              </div>
-              
-              <div className="form-group">
-                <label>Your Review</label>
-                <textarea
-                  value={reviewForm.comment}
-                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                  placeholder="Share your experience..."
-                  rows="4"
-                  required
-                ></textarea>
-              </div>
-              
-              <button type="submit" className="btn-submit-review">
-                Submit Review
-              </button>
-            </form>
-          </div>
-        )}
+        {/* Search Bar */}
+        <div className="search-section">
+          <input 
+            type="text" 
+            placeholder="Search providers or read reviews..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
 
-        {/* Provider Reviews List */}
-        <div className="providers-section">
-          <h2>Healthcare Providers</h2>
-          <div className="filter-section">
-            <label>Filter by rating:</label>
-            <select value={filterRating} onChange={(e) => setFilterRating(parseInt(e.target.value))}>
-              <option value={0}>All Ratings</option>
-              <option value={5}>5 Stars</option>
-              <option value={4}>4+ Stars</option>
-              <option value={3}>3+ Stars</option>
-            </select>
-          </div>
-          
+        {/* Tabs */}
+        <div className="reviews-tabs">
+          <button 
+            className={`tab-btn ${activeTab === 'providers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('providers')}
+          >
+            Providers
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reviews')}
+          >
+            Recent Reviews
+          </button>
+        </div>
+
+        {/* Providers Grid */}
+        {activeTab === 'providers' && (
           <div className="providers-grid">
-            {getProviders().map(provider => {
-              const avgRating = getAverageRating(provider.id);
-              const providerReviews = getDisplayReviews(provider.id);
-              
-              return (
-                <div key={provider.id} className="provider-card">
-                  <div className="provider-header">
-                    <div className="provider-avatar">
-                      {provider.name.charAt(0)}
-                    </div>
-                    <div className="provider-info">
-                      <h3>{provider.name}</h3>
-                      <span className="provider-role">
-                        {provider.role === 'doctor' ? provider.specialty : 'Nurse'}
-                      </span>
-                      {provider.experience && (
-                        <span className="provider-experience">{provider.experience} experience</span>
-                      )}
-                    </div>
+            {filteredProviders.map(provider => (
+              <div key={provider.id} className="provider-review-card">
+                <div className="card-header">
+                  <div className="avatar">{provider.avatar}</div>
+                  <div className="provider-info">
+                    <h3>{provider.name}</h3>
+                    <span className="specialty">{provider.specialty}</span>
                   </div>
-                  
-                  <div className="provider-rating-summary">
-                    <div className="avg-rating">
-                      <span className="rating-number">{avgRating}</span>
-                      <div className="rating-stars">
-                        {renderStars(Math.round(avgRating))}
-                      </div>
-                      <span className="review-count">{providerReviews.length} reviews</span>
-                    </div>
-                  </div>
-                  
-                  {providerReviews.length > 0 && (
-                    <div className="provider-reviews-list">
-                      <h4>Recent Reviews</h4>
-                      {providerReviews.slice(0, 3).map(review => (
-                        <div key={review.id} className="review-item">
-                          <div className="review-header">
-                            <span className="reviewer-name">{review.patientName}</span>
-                            <span className="review-date">{review.date}</span>
-                          </div>
-                          <div className="review-rating">
-                            {renderStars(review.rating)}
-                          </div>
-                          <p className="review-comment">{review.comment}</p>
-                        </div>
-                      ))}
-                      {providerReviews.length > 3 && (
-                        <button className="btn-view-more">
-                          View all {providerReviews.length} reviews
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  
-                  {providerReviews.length === 0 && (
-                    <div className="no-reviews">
-                      <p>No reviews yet. Be the first to review!</p>
-                    </div>
-                  )}
-                  
-                  {currentUser.role === 'patient' && (
-                    <button 
-                      className="btn-review-provider"
-                      onClick={() => {
-                        setSelectedProvider(provider);
-                        setShowAddReview(true);
-                      }}
-                    >
-                      Write a Review
-                    </button>
-                  )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* My Reviews Section (for patients) */}
-        {currentUser.role === 'patient' && (
-          <div className="my-reviews-section">
-            <h2>My Reviews</h2>
-            {reviews.filter(r => r.patientId === currentUser.id).length > 0 ? (
-              <div className="my-reviews-list">
-                {reviews.filter(r => r.patientId === currentUser.id).map(review => (
-                  <div key={review.id} className="my-review-card">
-                    <div className="review-provider-info">
-                      <strong>{review.providerName}</strong>
-                      <span className="review-date">{review.date}</span>
-                    </div>
-                    <div className="review-rating">
-                      {renderStars(review.rating)}
-                    </div>
-                    <p className="review-comment">{review.comment}</p>
-                  </div>
-                ))}
+                <div className="rating-section">
+                  <div className="stars">★★★★★</div>
+                  <span className="score">{provider.rating}</span>
+                  <span className="review-count">({provider.reviews})</span>
+                </div>
+                <button className="view-reviews-btn">View Reviews</button>
               </div>
-            ) : (
-              <p className="no-reviews-message">You haven't written any reviews yet.</p>
-            )}
+            ))}
           </div>
         )}
+
+        {/* Reviews List */}
+        {activeTab === 'reviews' && (
+          <div className="reviews-list">
+            {recentReviews.map((review, index) => (
+              <div key={index} className="review-card">
+                <div className="review-header">
+                  <div className="patient-name">{review.patient}</div>
+                  <div className="review-rating">{review.rating} ★</div>
+                </div>
+                <p className="review-text">{review.comment}</p>
+                <div className="review-provider">{review.provider}</div>
+                <div className="review-date">{review.date}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Stats Row */}
+        <div className="stats-row">
+          <div className="stat-item">
+            <div className="stat-number">4.8</div>
+            <div>Overall Rating</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">124</div>
+            <div>Providers</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">456</div>
+            <div>Total Reviews</div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
 export default Reviews;
+
