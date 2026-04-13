@@ -7,7 +7,7 @@ import './Login.css';
 
 function Login() {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, users } = useApp();
+  const { login, loginWithGoogle, currentUser, getDashboardPath } = useApp();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -30,42 +30,44 @@ function Login() {
     const result = await loginWithGoogle();
     setLoading(false);
     if (result.success) {
-      navigate('/dashboard/patient');
+      const role = currentUser?.role || 'patient';
+      navigate(getDashboardPath(role), { replace: true });
     } else {
       setError(result.error);
     }
   };
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    const localLogin = login(formData.email, formData.password);
+    if (localLogin.success) {
+      navigate(getDashboardPath(localLogin.user.role), { replace: true });
+      setLoading(false);
+      return;
+    }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: formData.email,
       password: formData.password
     });
-    
+
     if (error) {
       setError(error.message);
-    } else {
-      // Fetch role from users table
-      const { data: profile } = await supabase
-        .from('users')
-        .select('role')
-        .eq('supabase_user_id', data.user.id)
-        .single();
-        
-      const roleDashboards = {
-        'admin': '/dashboard/admin',
-        'doctor': '/dashboard/doctor',
-        'nurse': '/dashboard/nurse',
-        'patient': '/dashboard/patient'
-      };
-      
-      const rolePath = roleDashboards[profile?.role] || '/dashboard/patient';
-      navigate(rolePath, { replace: true });
+      setLoading(false);
+      return;
     }
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('supabase_user_id', data.user.id)
+      .single();
+
+    const role = profile?.role || data.user.user_metadata?.role || 'patient';
+    navigate(getDashboardPath(role), { replace: true });
     setLoading(false);
   };
 

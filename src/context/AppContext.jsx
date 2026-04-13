@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase, googleLogin, supabaseLogout } from "../supabaseClient.js";
 import { supabaseDB } from '../lib/supabase.js';
 
@@ -90,6 +89,16 @@ export function AppProvider({ children }) {
     const saved = localStorage.getItem('reviews');
     return saved ? JSON.parse(saved) : initialReviews;
   });
+
+  const getDashboardPath = (role) => {
+    const roleDashboards = {
+      admin: '/dashboard/admin',
+      doctor: '/dashboard/doctor',
+      nurse: '/dashboard/nurse',
+      patient: '/dashboard/patient'
+    };
+    return roleDashboards[role] || '/dashboard/patient';
+  };
 
   // Video call state
   const [videoCallState, setVideoCallState] = useState({
@@ -455,6 +464,7 @@ export function AppProvider({ children }) {
     register,
     logout,
     loginWithGoogle,
+    getDashboardPath,
     
     // Appointments
     appointments,
