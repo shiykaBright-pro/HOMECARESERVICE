@@ -68,9 +68,9 @@ function NurseDashboard() {
       navigate('/login');
     } else if (currentUser.role !== 'nurse') {
       switch(currentUser.role) {
-        case 'patient': navigate('/dashboard/patient'); break;
-        case 'doctor': navigate('/dashboard/doctor'); break;
-        case 'admin': navigate('/dashboard/admin'); break;
+        case 'patient': navigate('/patient-dashboard'); break;
+        case 'doctor': navigate('/doctor-dashboard'); break;
+        case 'admin': navigate('/admin-dashboard'); break;
       }
     } else {
       setProfileForm({

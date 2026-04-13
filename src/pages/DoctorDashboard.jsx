@@ -67,9 +67,9 @@ function DoctorDashboard() {
       navigate('/login');
     } else if (currentUser.role !== 'doctor') {
       switch(currentUser.role) {
-        case 'patient': navigate('/dashboard/patient'); break;
-        case 'nurse': navigate('/dashboard/nurse'); break;
-        case 'admin': navigate('/dashboard/admin'); break;
+        case 'patient': navigate('/patient-dashboard'); break;
+        case 'nurse': navigate('/nurse-dashboard'); break;
+        case 'admin': navigate('/admin-dashboard'); break;
       }
     } else {
       setProfileForm({

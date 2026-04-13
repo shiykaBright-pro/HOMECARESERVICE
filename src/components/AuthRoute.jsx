@@ -10,12 +10,12 @@ const AuthRoute = ({ children }) => {
   useEffect(() => {
     if (currentUser) {
       const roleDashboards = {
-        patient: '/dashboard/patient',
-        doctor: '/dashboard/doctor',
-        nurse: '/dashboard/nurse',
-        admin: '/dashboard/admin'
+        patient: '/patient-dashboard',
+        doctor: '/doctor-dashboard',
+        nurse: '/nurse-dashboard',
+        admin: '/admin-dashboard'
       };
-      navigate(roleDashboards[currentUser.role] || '/dashboard/patient', { replace: true });
+      navigate(roleDashboards[currentUser.role] || '/patient-dashboard', { replace: true });
     }
   }, [currentUser, navigate]);
 

@@ -92,12 +92,61 @@ export function AppProvider({ children }) {
 
   const getDashboardPath = (role) => {
     const roleDashboards = {
-      admin: '/dashboard/admin',
-      doctor: '/dashboard/doctor',
-      nurse: '/dashboard/nurse',
-      patient: '/dashboard/patient'
+      admin: '/admin-dashboard',
+      doctor: '/doctor-dashboard',
+      nurse: '/nurse-dashboard',
+      patient: '/patient-dashboard'
     };
-    return roleDashboards[role] || '/dashboard/patient';
+    return roleDashboards[role] || '/patient-dashboard';
+  };
+
+  const signInWithEmailPassword = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      return { success: false, error: error.message || 'Login failed' };
+    }
+
+    const userId = data?.user?.id;
+    if (!userId) {
+      return { success: false, error: 'Supabase did not return a valid user.' };
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, role, full_name, email, phone')
+      .eq('id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      return {
+        success: false,
+        error: 'Unable to determine your role. Please contact support.'
+      };
+    }
+
+    if (!['admin', 'doctor', 'nurse', 'patient'].includes(profile.role)) {
+      return {
+        success: false,
+        error: 'Your account role is invalid. Please contact support.'
+      };
+    }
+
+    const sessionUser = {
+      id: userId,
+      email: data.user.email || profile.email,
+      role: profile.role,
+      name: profile.full_name || profile.name || '',
+      ...profile
+    };
+
+    setCurrentUser(sessionUser);
+    localStorage.setItem('currentUser', JSON.stringify(sessionUser));
+
+    return { success: true, user: sessionUser };
   };
 
   // Video call state
@@ -464,7 +513,9 @@ export function AppProvider({ children }) {
     register,
     logout,
     loginWithGoogle,
+    signInWithEmailPassword,
     getDashboardPath,
+    setCurrentUser,
     
     // Appointments
     appointments,

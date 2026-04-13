@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import About from './pages/About';
 import Services from './pages/Services';
@@ -32,10 +33,10 @@ function App() {
 <Route path="/login" element={<Login />} />
   <Route path="/register" element={<Register />} />
 
-<Route path="/dashboard/patient" element={<PatientDashboard />} />
-  <Route path="/dashboard/doctor" element={<DoctorDashboard />} />
-  <Route path="/dashboard/nurse" element={<NurseDashboard />} />
-  <Route path="/dashboard/admin" element={<AdminDashboard />} />
+  <Route path="/patient-dashboard" element={<ProtectedRoute allowedRoles={['patient']}><PatientDashboard /></ProtectedRoute>} />
+  <Route path="/doctor-dashboard" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
+  <Route path="/nurse-dashboard" element={<ProtectedRoute allowedRoles={['nurse']}><NurseDashboard /></ProtectedRoute>} />
+  <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
 
           <Route path="/messages" element={<Messages />} />
           <Route path="/reviews" element={<Reviews />} />
