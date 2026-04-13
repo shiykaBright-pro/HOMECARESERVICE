@@ -9,7 +9,6 @@ const AuthRoute = ({ children }) => {
 
   useEffect(() => {
     if (currentUser) {
-      // Redirect to appropriate dashboard
       const roleDashboards = {
         patient: '/dashboard/patient',
         doctor: '/dashboard/doctor',
@@ -28,4 +27,5 @@ const AuthRoute = ({ children }) => {
 };
 
 export default AuthRoute;
+
 

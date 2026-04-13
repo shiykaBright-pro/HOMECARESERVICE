@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, googleLogin, supabaseLogout } from "../supabaseClient.js";
+import { supabaseDB } from '../lib/supabase.js';
 
 const AppContext = createContext();
 
@@ -25,8 +26,9 @@ const initialMedicalRecords = [
 ];
 
 const initialPrescriptions = [
-  { id: 1, patientId: 1, doctorId: 2, doctorName: 'Dr. Sarah Johnson', date: '2026-01-10', medications: [{ name: 'Vitamin D3', dosage: '1000IU', frequency: 'Once daily', duration: '30 days' }, { name: 'Calcium', dosage: '500mg', frequency: 'Twice daily', duration: '30 days' }], notes: 'Take with food', status: 'Active' },
+  { id: 1, provider_id: 2, patient_id: 1, medication: 'Vitamin D3 1000IU once daily', dosage: '1000IU', instructions: 'Take with food daily for 30 days', created_at: '2026-01-10T10:00:00Z' },
 ];
+
 
 const initialNotifications = [
   { id: 1, userId: 1, title: 'Appointment Confirmed', message: 'Your appointment with Dr. Sarah Johnson is confirmed', time: '2 hours ago', read: false, type: 'appointment' },
@@ -181,38 +183,7 @@ export function AppProvider({ children }) {
     );
   };
 
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    localStorage.setItem('users', JSON.stringify(users));
-  }, [users]);
 
-  useEffect(() => {
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-  }, [currentUser]);
-
-  useEffect(() => {
-    localStorage.setItem('appointments', JSON.stringify(appointments));
-  }, [appointments]);
-
-  useEffect(() => {
-    localStorage.setItem('medicalRecords', JSON.stringify(medicalRecords));
-  }, [medicalRecords]);
-
-  useEffect(() => {
-    localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
-  }, [prescriptions]);
-
-  useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-  }, [notifications]);
-
-  useEffect(() => {
-    localStorage.setItem('messages', JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem('reviews', JSON.stringify(reviews));
-  }, [reviews]);
 
   // Auth functions
   const login = (email, password) => {
@@ -250,25 +221,51 @@ export function AppProvider({ children }) {
     }
   };
 
+// Load real data from Supabase on login
+  const loadUserData = useCallback(async (supabaseUserId) => {
+    try {
+      const { profile, ...data } = await supabaseDB.loadUserData(supabaseUserId);
+      
+      // Update user profile
+      setUsers(prev => {
+        const updated = prev.map(u => u.supabase_user_id === supabaseUserId ? { ...u, ...profile } : u);
+        if (!updated.find(u => u.supabase_user_id === supabaseUserId)) {
+          updated.push(profile);
+        }
+        return updated;
+      });
+      
+      // Set data
+      setAppointments(data.appointments || []);
+      setMedicalRecords(data.medical_records || []);
+      setPrescriptions(data.prescriptions || []);
+      setNotifications(data.notifications || []);
+      setMessages(data.messages || []);
+      setReviews(data.reviews || []);
+    } catch (error) {
+      console.error('Load data failed:', error);
+    }
+  }, []);
+
+
   // Appointment functions
-  const addAppointment = (appointment) => {
-    const newAppointment = { ...appointment, id: appointments.length + 1, status: 'Pending' };
-    setAppointments([...appointments, newAppointment]);
-    
-    // Add notification
-    const newNotification = {
-      id: notifications.length + 1,
-      userId: appointment.providerId,
-      title: 'New Appointment Request',
-      message: `${appointment.patientName} requested an appointment for ${appointment.service}`,
-      time: 'Just now',
-      read: false,
-      type: 'appointment'
-    };
-    setNotifications([newNotification, ...notifications]);
-    
-    return newAppointment;
+  const addAppointment = async (appointment) => {
+    try {
+      const newAppointment = await supabaseDB.createAppointment({
+        ...appointment,
+        status: 'Pending'
+      });
+      
+      // Refresh data
+      await loadUserData(currentUser.supabase_user_id);
+      
+      return newAppointment;
+    } catch (error) {
+      console.error('Create appointment failed:', error);
+      throw error;
+    }
   };
+
 
   const updateAppointment = (id, updates) => {
     setAppointments(appointments.map(apt => apt.id === id ? { ...apt, ...updates } : apt));
@@ -286,24 +283,30 @@ export function AppProvider({ children }) {
   };
 
   // Prescription functions
-  const addPrescription = (prescription) => {
-    const newPrescription = { ...prescription, id: prescriptions.length + 1, date: new Date().toISOString().split('T')[0], status: 'Active' };
-    setPrescriptions([...prescriptions, newPrescription]);
-    
-    // Add notification for patient
-    const patientNotification = {
-      id: notifications.length + 1,
-      userId: prescription.patientId,
-      title: 'New Prescription',
-      message: `You have a new prescription from ${prescription.doctorName}`,
-      time: 'Just now',
-      read: false,
-      type: 'prescription'
-    };
-    setNotifications([patientNotification, ...notifications]);
-    
-    return newPrescription;
+  const addPrescription = async (prescription) => {
+    // Client validation
+    if (!prescription.provider_id || !prescription.patient_id || !prescription.medication?.trim() || !prescription.dosage?.trim() || !prescription.instructions?.trim()) {
+      throw new Error('All fields (medication, dosage, instructions) are required');
+    }
+
+    try {
+      const newPrescription = await supabaseDB.createPrescription(prescription);
+      
+      // Refresh data
+      await loadUserData(currentUser.supabase_user_id);
+      
+      return newPrescription;
+    } catch (error) {
+      console.error('Create prescription failed:', error);
+      throw error;
+    }
   };
+
+
+  const getUserPrescriptions = (userId) => {
+    return prescriptions.filter(p => p.patient_id === userId);
+  };
+
 
   // Notification functions
   const markNotificationRead = (id) => {
@@ -467,6 +470,7 @@ export function AppProvider({ children }) {
     // Prescriptions
     prescriptions,
     addPrescription,
+    getUserPrescriptions,
     
     // Notifications
     notifications,

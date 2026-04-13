@@ -36,16 +36,10 @@ function Login() {
     }
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
-      setLoading(false);
-      return;
-    }
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: formData.email,
@@ -55,11 +49,26 @@ function Login() {
     if (error) {
       setError(error.message);
     } else {
-      login({ email: formData.email, role: formData.role });
-      navigate('/');
+      // Fetch role from users table
+      const { data: profile } = await supabase
+        .from('users')
+        .select('role')
+        .eq('supabase_user_id', data.user.id)
+        .single();
+        
+      const roleDashboards = {
+        'admin': '/dashboard/admin',
+        'doctor': '/dashboard/doctor',
+        'nurse': '/dashboard/nurse',
+        'patient': '/dashboard/patient'
+      };
+      
+      const rolePath = roleDashboards[profile?.role] || '/dashboard/patient';
+      navigate(rolePath, { replace: true });
     }
     setLoading(false);
   };
+
 
   return (
     <div className="login-page">

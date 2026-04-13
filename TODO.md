@@ -1,12 +1,15 @@
-## Google OAuth with Supabase Implementation
+# Prescription Feature Implementation TODO
 
-**Status:** In Progress
+## Completed: [ ]
+## In Progress: [ ]
+## Pending:
 
-### Steps:
-- [x] Create TODO.md with breakdown
-- [x] Step 1: Update src/supabaseClient.js with auth helpers
-- [x] Step 2: Update src/context/AppContext.jsx with real Supabase OAuth
-- [x] Step 3: Add Google button to src/pages/Home.jsx matching existing UI
-- [x] Step 4: Test full flow
-- [x] Step 5: Update TODO-GOOGLE-AUTH.md and attempt_completion
-
+1. ✅ [DONE] Create TODO.md with plan steps
+2. ✅ [DONE] Update AppContext.jsx: Align initialPrescriptions & addPrescription() to exact fields (provider_id, patient_id, medication, dosage, instructions, created_at auto)
+3. ✅ [DONE] Update DoctorDashboard.jsx: Simplify form to single med row, add full validation, map to new model
+4. ✅ Add to NurseDashboard.jsx: Copy prescription form from Doctor, add buttons/modals 
+5. ✅ Update PatientDashboard.jsx: Enhance prescription list/view modal for new fields
+6. ✅ Add role guards: Explicit checks before forms (doctor/nurse only)
+7. ✅ Test: Doctor/Nurse create → Patient views
+8. [ ] Complete
+import AuthRoute from "./components/AuthRoute";

@@ -30,11 +30,13 @@ function App() {
           <Route path="/emergency/hospital" element={<Emergency />} />
 
 <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard/patient" element={<PatientDashboard />} />
-          <Route path="/dashboard/doctor" element={<DoctorDashboard />} />
-          <Route path="/dashboard/nurse" element={<NurseDashboard />} />
-          <Route path="/dashboard/admin" element={<AdminDashboard />} />
+  <Route path="/register" element={<Register />} />
+
+<Route path="/dashboard/patient" element={<PatientDashboard />} />
+  <Route path="/dashboard/doctor" element={<DoctorDashboard />} />
+  <Route path="/dashboard/nurse" element={<NurseDashboard />} />
+  <Route path="/dashboard/admin" element={<AdminDashboard />} />
+
           <Route path="/messages" element={<Messages />} />
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/video-call/:id" element={<VideoCall />} />

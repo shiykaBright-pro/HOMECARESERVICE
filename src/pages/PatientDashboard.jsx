@@ -150,28 +150,24 @@ function PatientDashboard() {
   };
 
   const handleViewPrescription = (prescription) => {
+    const provider = users.find(u => u.id === prescription.provider_id);
     setModalContent({
-      title: 'Prescription Details',
+      title: `Prescription from ${provider?.name || 'Provider'}`,
       content: (
         <div className="modal-details">
-          <p><strong>Date:</strong> {prescription.date}</p>
-          <p><strong>Doctor:</strong> {prescription.doctorName}</p>
-          <p><strong>Status:</strong> <span className={`status ${prescription.status.toLowerCase()}`}>{prescription.status}</span></p>
-          <p><strong>Notes:</strong> {prescription.notes}</p>
-          <div className="medications-list">
-            <h4>Medications:</h4>
-            {prescription.medications?.map((med, index) => (
-              <div key={index} className="medication-item">
-                <p><strong>{med.name}</strong> - {med.dosage}</p>
-                <p>Frequency: {med.frequency} for {med.duration}</p>
-              </div>
-            ))}
+          <p><strong>Date:</strong> {prescription.created_at ? new Date(prescription.created_at).toLocaleDateString() : 'Recent'}</p>
+          <p><strong>Provider:</strong> {provider?.name || 'Unknown'}</p>
+          <div className="medication-item">
+            <p><strong>Medication:</strong> {prescription.medication}</p>
+            <p><strong>Dosage:</strong> {prescription.dosage}</p>
+            <p><strong>Instructions:</strong> {prescription.instructions}</p>
           </div>
         </div>
       )
     });
     setShowModal(true);
   };
+
 
   const handleLogout = () => {
     logout();
