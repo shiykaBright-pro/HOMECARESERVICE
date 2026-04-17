@@ -28,7 +28,6 @@ const initialPrescriptions = [
   { id: 1, provider_id: 2, patient_id: 1, medication: 'Vitamin D3 1000IU once daily', dosage: '1000IU', instructions: 'Take with food daily for 30 days', created_at: '2026-01-10T10:00:00Z' },
 ];
 
-
 const initialNotifications = [
   { id: 1, userId: 1, title: 'Appointment Confirmed', message: 'Your appointment with Dr. Sarah Johnson is confirmed', time: '2 hours ago', read: false, type: 'appointment' },
   { id: 2, userId: 1, title: 'New Prescription', message: 'You have a new prescription from Dr. John Smith', time: '1 day ago', read: false, type: 'prescription' },
@@ -241,8 +240,6 @@ export function AppProvider({ children }) {
     );
   };
 
-
-
   // Auth functions
   const login = (email, password) => {
     const user = users.find(u => u.email === email && u.password === password);
@@ -305,27 +302,7 @@ export function AppProvider({ children }) {
     }
   }, []);
 
-
   // Appointment functions
-<<<<<<< HEAD
-  const addAppointment = (appointment) => {
-    const newAppointment = { ...appointment, id: appointments.length + 1, status: 'Pending', payment_status: 'pending' };
-    setAppointments([...appointments, newAppointment]);
-    
-    // Add notification
-    const newNotification = {
-      id: notifications.length + 1,
-      userId: appointment.providerId,
-      title: 'New Appointment Request',
-      message: `${appointment.patientName} requested an appointment for ${appointment.service}`,
-      time: 'Just now',
-      read: false,
-      type: 'appointment'
-    };
-    setNotifications([newNotification, ...notifications]);
-    
-    return newAppointment;
-=======
   const addAppointment = async (appointment) => {
     try {
       const newAppointment = await supabaseDB.createAppointment({
@@ -341,9 +318,7 @@ export function AppProvider({ children }) {
       console.error('Create appointment failed:', error);
       throw error;
     }
->>>>>>> 7794719105303937e1d7086872eba1e24469841c
   };
-
 
   const updateAppointment = (id, updates) => {
     setAppointments(appointments.map(apt => apt.id === id ? { ...apt, ...updates } : apt));
@@ -380,11 +355,9 @@ export function AppProvider({ children }) {
     }
   };
 
-
   const getUserPrescriptions = (userId) => {
     return prescriptions.filter(p => p.patient_id === userId);
   };
-
 
   // Notification functions
   const markNotificationRead = (id) => {
@@ -599,3 +572,4 @@ export function useApp() {
   }
   return context;
 }
+
