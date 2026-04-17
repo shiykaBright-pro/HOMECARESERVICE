@@ -86,7 +86,7 @@ function Register() {
     const result = await loginWithGoogle();
     setLoading(false);
     if (result.success) {
-      navigate('/dashboard/patient');
+      navigate('/patient-dashboard');
     } else {
       setError(result.error);
     }
@@ -152,7 +152,7 @@ function Register() {
       setError(error.message);
     } else {
       register(userData);
-      navigate('/');
+      navigate('/patient-dashboard', { replace: true });
     }
     setLoading(false);
   };

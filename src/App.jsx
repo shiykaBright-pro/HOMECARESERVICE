@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Home from './pages/Home';
 import About from './pages/About';
 import Services from './pages/Services';
@@ -31,12 +32,22 @@ function App() {
           <Route path="/emergency/hospital" element={<Emergency />} />
 
 <Route path="/login" element={<Login />} />
+<<<<<<< HEAD
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
           <Route path="/dashboard/patient/payment" element={<Payment />} />
           <Route path="/dashboard/doctor" element={<DoctorDashboard />} />
           <Route path="/dashboard/nurse" element={<NurseDashboard />} />
           <Route path="/dashboard/admin" element={<AdminDashboard />} />
+=======
+  <Route path="/register" element={<Register />} />
+
+  <Route path="/patient-dashboard" element={<ProtectedRoute allowedRoles={['patient']}><PatientDashboard /></ProtectedRoute>} />
+  <Route path="/doctor-dashboard" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
+  <Route path="/nurse-dashboard" element={<ProtectedRoute allowedRoles={['nurse']}><NurseDashboard /></ProtectedRoute>} />
+  <Route path="/admin-dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+
+>>>>>>> 7794719105303937e1d7086872eba1e24469841c
           <Route path="/messages" element={<Messages />} />
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/video-call/:id" element={<VideoCall />} />

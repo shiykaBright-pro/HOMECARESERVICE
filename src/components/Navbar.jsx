@@ -93,7 +93,7 @@ function Navbar() {
             <div className="user-menu">
               <Link to="" className="user-name">{currentUser.name}</Link>
               <div className="dropdown-content">
-                <Link to={`/dashboard/${currentUser.role}`} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                <Link to={`/${currentUser.role}-dashboard`} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
                 <Link to="/" onClick={handleLogout}>Logout</Link>
               </div>
             </div>

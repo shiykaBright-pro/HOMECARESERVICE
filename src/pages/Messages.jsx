@@ -27,19 +27,19 @@ function Messages() {
     const categories = [];
     
     if (currentUser.role === 'patient') {
-      categories.push({ value: 'doctor', label: '👨‍⚕️ Doctors', route: '/dashboard/patient?tab=doctors', icon: '👨‍⚕️' });
-      categories.push({ value: 'nurse', label: '👩‍⚕️ Nurses', route: '/dashboard/patient?tab=doctors', icon: '👩‍⚕️' });
+      categories.push({ value: 'doctor', label: '👨‍⚕️ Doctors', route: '/patient-dashboard?tab=doctors', icon: '👨‍⚕️' });
+      categories.push({ value: 'nurse', label: '👩‍⚕️ Nurses', route: '/patient-dashboard?tab=doctors', icon: '👩‍⚕️' });
     } else if (currentUser.role === 'doctor') {
-      categories.push({ value: 'patient', label: '👤 Patients', route: '/dashboard/doctor?tab=patients', icon: '👤' });
+      categories.push({ value: 'patient', label: '👤 Patients', route: '/doctor-dashboard?tab=patients', icon: '👤' });
     } else if (currentUser.role === 'nurse') {
-      categories.push({ value: 'dashboard', label: '🏠 My Dashboard', route: '/dashboard/nurse', icon: '🏠' });
-      categories.push({ value: 'patient', label: '👤 Patients', route: '/dashboard/nurse?tab=patients', icon: '👤' });
-      categories.push({ value: 'doctor', label: '👨‍⚕️ Doctors', route: '/dashboard/nurse?tab=messages', icon: '👨‍⚕️' });
+      categories.push({ value: 'dashboard', label: '🏠 My Dashboard', route: '/nurse-dashboard', icon: '🏠' });
+      categories.push({ value: 'patient', label: '👤 Patients', route: '/nurse-dashboard?tab=patients', icon: '👤' });
+      categories.push({ value: 'doctor', label: '👨‍⚕️ Doctors', route: '/nurse-dashboard?tab=messages', icon: '👨‍⚕️' });
     } else if (currentUser.role === 'admin') {
-      categories.push({ value: 'dashboard', label: '🏠 My Dashboard', route: '/dashboard/admin', icon: '🏠' });
-      categories.push({ value: 'patient', label: '👤 Patients', route: '/dashboard/admin?tab=users', icon: '👤' });
-      categories.push({ value: 'doctor', label: '👨‍⚕️ Doctors', route: '/dashboard/admin?tab=users', icon: '👨‍⚕️' });
-      categories.push({ value: 'nurse', label: '👩‍⚕️ Nurses', route: '/dashboard/admin?tab=users', icon: '👩‍⚕️' });
+      categories.push({ value: 'dashboard', label: '🏠 My Dashboard', route: '/admin-dashboard', icon: '🏠' });
+      categories.push({ value: 'patient', label: '👤 Patients', route: '/admin-dashboard?tab=users', icon: '👤' });
+      categories.push({ value: 'doctor', label: '👨‍⚕️ Doctors', route: '/admin-dashboard?tab=users', icon: '👨‍⚕️' });
+      categories.push({ value: 'nurse', label: '👩‍⚕️ Nurses', route: '/admin-dashboard?tab=users', icon: '👩‍⚕️' });
     }
     
     return categories;

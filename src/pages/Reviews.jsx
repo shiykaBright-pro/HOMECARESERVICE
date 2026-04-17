@@ -1,126 +1,168 @@
-import React, { useState } from 'react';
+
 import Navbar from '../components/Navbar';
 import './Reviews.css';
 
 function Reviews() {
-  const [activeTab, setActiveTab] = useState('providers');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [reviews, setReviews] = useState([]);
+  const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState('list');
 
-  // Sample data - replace with real data from context
-  const providers = [
-    { id: 1, name: 'Dr. Sarah Johnson', specialty: 'Cardiology', rating: 4.8, reviews: 124, avatar: 'SJ' },
-    { id: 2, name: 'Nurse Emily Davis', specialty: 'General Nursing', rating: 4.9, reviews: 89, avatar: 'ED' },
-    { id: 3, name: 'Dr. Michael Chen', specialty: 'Pediatrics', rating: 4.7, reviews: 156, avatar: 'MC' },
-    { id: 4, name: 'Nurse Lisa Rodriguez', specialty: 'Wound Care', rating: 4.6, reviews: 67, avatar: 'LR' },
-  ];
+  const handleSubmitReview = (e) => {
+    e.preventDefault();
+    if (reviewForm.comment.trim().length < 10) {
+      alert('Comment must be at least 10 characters');
+      return;
+    }
 
-  const recentReviews = [
-    { patient: 'John Smith', provider: 'Dr. Sarah Johnson', rating: 5, comment: 'Excellent care, very professional!', date: '2024-01-15' },
-    { patient: 'Mary Wilson', provider: 'Nurse Emily Davis', rating: 4, comment: 'Compassionate and thorough.', date: '2024-01-14' },
-  ];
+    setLoading(true);
+    // Simulate API call
+    setTimeout(() => {
+      const newReview = {
+        id: Date.now(),
+        rating: reviewForm.rating,
+        comment: reviewForm.comment,
+        date: new Date().toLocaleDateString(),
+        patientName: 'Current Patient'
+      };
+      setReviews([newReview, ...reviews]);
+      setReviewForm({ rating: 5, comment: '' });
+      setShowForm(false);
+      setLoading(false);
+      alert('Review submitted successfully!');
+    }, 800);
+  };
 
-  const filteredProviders = providers.filter(p => 
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const stars = (rating) => {
+    return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+  };
+
+  const filteredReviews = reviews.filter(review =>
+    review.comment.toLowerCase().includes(reviewForm.comment.toLowerCase())
   );
 
   return (
     <div className="reviews-page">
       <Navbar />
-      <div className="reviews-wrapper">
-        {/* Hero Section */}
-        <div className="reviews-hero">
-          <div className="hero-content">
-            <h1>Patient Reviews</h1>
-            <p>See what our patients say about our care providers</p>
-            <div className="overall-rating">
-              <span className="avg-score">4.8</span>
-              <span>★ (456 reviews)</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="search-section">
-          <input 
-            type="text" 
-            placeholder="Search providers or read reviews..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        {/* Tabs */}
-        <div className="reviews-tabs">
+      <div className="reviews-container">
+        {/* Header */}
+        <header className="reviews-header">
+          <h1>Patient Reviews</h1>
+          <p>Share your experience and help others make informed decisions</p>
           <button 
-            className={`tab-btn ${activeTab === 'providers' ? 'active' : ''}`}
-            onClick={() => setActiveTab('providers')}
+            className="btn-primary write-review-btn"
+            onClick={() => setShowForm(!showForm)}
+            disabled={loading}
           >
-            Providers
+            {showForm ? 'Cancel' : '✍️ Write a Review'}
           </button>
-          <button 
-            className={`tab-btn ${activeTab === 'reviews' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reviews')}
-          >
-            Recent Reviews
-          </button>
-        </div>
+        </header>
 
-        {/* Providers Grid */}
-        {activeTab === 'providers' && (
-          <div className="providers-grid">
-            {filteredProviders.map(provider => (
-              <div key={provider.id} className="provider-review-card">
-                <div className="card-header">
-                  <div className="avatar">{provider.avatar}</div>
-                  <div className="provider-info">
-                    <h3>{provider.name}</h3>
-                    <span className="specialty">{provider.specialty}</span>
-                  </div>
+        {/* Review Form */}
+        {showForm && (
+          <section className="review-form-section">
+            <form onSubmit={handleSubmitReview} className="review-form">
+              <div className="form-group">
+                <label>Your Rating</label>
+                <div className="star-rating">
+                  {[5, 4, 3, 2, 1].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      className={`star ${reviewForm.rating >= star ? 'filled' : ''}`}
+                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                    >
+                      ★
+                    </button>
+                  ))}
                 </div>
-                <div className="rating-section">
-                  <div className="stars">★★★★★</div>
-                  <span className="score">{provider.rating}</span>
-                  <span className="review-count">({provider.reviews})</span>
-                </div>
-                <button className="view-reviews-btn">View Reviews</button>
               </div>
-            ))}
-          </div>
+              <div className="form-group">
+                <label>Review (minimum 10 characters)</label>
+                <textarea
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                  placeholder="Tell us about your experience..."
+                  rows={5}
+                  maxLength={1000}
+                  required
+                />
+                <div className="char-counter">
+                  {reviewForm.comment.length}/1000 characters
+                  {reviewForm.comment.length < 10 && <span className="error"> (minimum 10 required)</span>}
+                </div>
+              </div>
+              <div className="form-buttons">
+                <button type="submit" disabled={loading || reviewForm.comment.length < 10} className="btn-submit">
+                  {loading ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </div>
+            </form>
+          </section>
         )}
 
         {/* Reviews List */}
-        {activeTab === 'reviews' && (
-          <div className="reviews-list">
-            {recentReviews.map((review, index) => (
-              <div key={index} className="review-card">
-                <div className="review-header">
-                  <div className="patient-name">{review.patient}</div>
-                  <div className="review-rating">{review.rating} ★</div>
-                </div>
-                <p className="review-text">{review.comment}</p>
-                <div className="review-provider">{review.provider}</div>
-                <div className="review-date">{review.date}</div>
+        {!showForm && (
+          <section className="reviews-list-section">
+            <div className="reviews-header-controls">
+              <h2>Recent Reviews ({reviews.length})</h2>
+              <input
+                type="text"
+                placeholder="Search reviews..."
+                value={reviewForm.comment}
+                onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                className="search-reviews"
+              />
+            </div>
+            
+            {filteredReviews.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">⭐</div>
+                <h3>No reviews yet</h3>
+                <p>Be the first to share your healthcare experience!</p>
+                <button 
+                  className="btn-primary"
+                  onClick={() => setShowForm(true)}
+                >
+                  Write First Review
+                </button>
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="reviews-grid">
+                {filteredReviews.map((review) => (
+                  <article key={review.id} className="review-card">
+                    <div className="review-header">
+                      <div className="review-rating-display">
+                        {stars(review.rating)}
+                        <span className="rating-number">({review.rating}/5)</span>
+                      </div>
+                      <span className="review-date">{review.date}</span>
+                    </div>
+                    <div className="review-patient">
+                      <span className="patient-name">{review.patientName}</span>
+                    </div>
+                    <p className="review-content">{review.comment}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
         )}
 
-        {/* Stats Row */}
-        <div className="stats-row">
-          <div className="stat-item">
-            <div className="stat-number">4.8</div>
-            <div>Overall Rating</div>
+        {/* Stats */}
+        <section className="reviews-stats">
+          <div className="stat">
+            <span className="stat-number">{reviews.length}</span>
+            <span>Total Reviews</span>
           </div>
-          <div className="stat-item">
-            <div className="stat-number">124</div>
-            <div>Providers</div>
+          <div className="stat">
+            <span className="stat-number">
+              {reviews.length > 0 ? (reviews.reduce((a, b) => a + b.rating, 0) / reviews.length).toFixed(1) : '0'}
+            </span>
+            <span>Average Rating</span>
           </div>
-          <div className="stat-item">
-            <div className="stat-number">456</div>
-            <div>Total Reviews</div>
-          </div>
-        </div>
+        </section>
       </div>
     </div>
   );

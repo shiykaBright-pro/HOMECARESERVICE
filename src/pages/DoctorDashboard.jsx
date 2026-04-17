@@ -18,12 +18,14 @@ function DoctorDashboard() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({});
   
-  // Prescription form state
+// Prescription form state
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
   const [prescriptionForm, setPrescriptionForm] = useState({
-    medications: [{ name: '', dosage: '', frequency: '', duration: '' }],
-    notes: ''
+    medication: '',
+    dosage: '',
+    instructions: ''
   });
+
   
   // Medical record form state
   const [showRecordForm, setShowRecordForm] = useState(false);
@@ -65,9 +67,9 @@ function DoctorDashboard() {
       navigate('/login');
     } else if (currentUser.role !== 'doctor') {
       switch(currentUser.role) {
-        case 'patient': navigate('/dashboard/patient'); break;
-        case 'nurse': navigate('/dashboard/nurse'); break;
-        case 'admin': navigate('/dashboard/admin'); break;
+        case 'patient': navigate('/patient-dashboard'); break;
+        case 'nurse': navigate('/nurse-dashboard'); break;
+        case 'admin': navigate('/admin-dashboard'); break;
       }
     } else {
       setProfileForm({
@@ -247,44 +249,39 @@ function DoctorDashboard() {
   // Handle prescription form
   const handlePrescriptionSubmit = (e) => {
     e.preventDefault();
-    if (!selectedPatient || prescriptionForm.medications[0].name === '') {
-      alert('Please add at least one medication');
+    
+    // Role check - DOCTOR ONLY
+    if (currentUser.role !== 'doctor') {
+      alert('Only doctors can create prescriptions');
+      return;
+    }
+    
+    // Validation
+    const { medication, dosage, instructions } = prescriptionForm;
+    if (!selectedPatient || !medication.trim() || !dosage.trim() || !instructions.trim()) {
+      alert('All fields (Medication, Dosage, Instructions) are required');
       return;
     }
 
-    addPrescription({
-      patientId: selectedPatient.id,
-      doctorId: currentUser.id,
-      doctorName: currentUser.name,
-      medications: prescriptionForm.medications.filter(m => m.name !== ''),
-      notes: prescriptionForm.notes
-    });
+    try {
+      addPrescription({
+        provider_id: currentUser.id,
+        patient_id: selectedPatient.id,
+        medication: medication.trim(),
+        dosage: dosage.trim(),
+        instructions: instructions.trim()
+      });
 
-    alert('Prescription created successfully!');
-    setShowPrescriptionForm(false);
-    setPrescriptionForm({ medications: [{ name: '', dosage: '', frequency: '', duration: '' }], notes: '' });
-    setSelectedPatient(null);
-  };
-
-  const handleMedicationChange = (index, field, value) => {
-    const newMedications = [...prescriptionForm.medications];
-    newMedications[index][field] = value;
-    setPrescriptionForm({ ...prescriptionForm, medications: newMedications });
-  };
-
-  const addMedicationField = () => {
-    setPrescriptionForm({
-      ...prescriptionForm,
-      medications: [...prescriptionForm.medications, { name: '', dosage: '', frequency: '', duration: '' }]
-    });
-  };
-
-  const removeMedicationField = (index) => {
-    if (prescriptionForm.medications.length > 1) {
-      const newMedications = prescriptionForm.medications.filter((_, i) => i !== index);
-      setPrescriptionForm({ ...prescriptionForm, medications: newMedications });
+      alert('Prescription created successfully!');
+      setShowPrescriptionForm(false);
+      setPrescriptionForm({ medication: '', dosage: '', instructions: '' });
+      setSelectedPatient(null);
+    } catch (error) {
+      alert('Error creating prescription: ' + error.message);
     }
   };
+
+
 
   // Handle medical record form
   const handleRecordSubmit = (e) => {
@@ -362,50 +359,37 @@ function DoctorDashboard() {
           <div className="form-modal">
             <h2>Create Prescription for {selectedPatient.name}</h2>
             <form onSubmit={handlePrescriptionSubmit}>
-              <div className="medications-section">
-                <h3>Medications</h3>
-                {prescriptionForm.medications.map((med, index) => (
-                  <div key={index} className="medication-row">
-                    <input
-                      type="text"
-                      placeholder="Medication name"
-                      value={med.name}
-                      onChange={(e) => handleMedicationChange(index, 'name', e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Dosage (e.g., 500mg)"
-                      value={med.dosage}
-                      onChange={(e) => handleMedicationChange(index, 'dosage', e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Frequency (e.g., 2x daily)"
-                      value={med.frequency}
-                      onChange={(e) => handleMedicationChange(index, 'frequency', e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Duration (e.g., 7 days)"
-                      value={med.duration}
-                      onChange={(e) => handleMedicationChange(index, 'duration', e.target.value)}
-                    />
-                    {prescriptionForm.medications.length > 1 && (
-                      <button type="button" className="btn-remove" onClick={() => removeMedicationField(index)}>×</button>
-                    )}
-                  </div>
-                ))}
-                <button type="button" className="btn-add" onClick={addMedicationField}>+ Add Medication</button>
+              <div className="form-group">
+                <label>Medication <span style={{color: 'red'}}>*</span></label>
+                <input
+                  type="text"
+                  placeholder="e.g., Vitamin D3"
+                  value={prescriptionForm.medication}
+                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, medication: e.target.value })}
+                  required
+                />
               </div>
               
               <div className="form-group">
-                <label>Notes</label>
+                <label>Dosage <span style={{color: 'red'}}>*</span></label>
+                <input
+                  type="text"
+                  placeholder="e.g., 1000IU"
+                  value={prescriptionForm.dosage}
+                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, dosage: e.target.value })}
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Instructions <span style={{color: 'red'}}>*</span></label>
                 <textarea
-                  value={prescriptionForm.notes}
-                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, notes: e.target.value })}
-                  placeholder="Additional instructions..."
+                  value={prescriptionForm.instructions}
+                  onChange={(e) => setPrescriptionForm({ ...prescriptionForm, instructions: e.target.value })}
+                  placeholder="e.g., Take once daily with food"
                   rows="3"
-                ></textarea>
+                  required
+                />
               </div>
               
               <div style={{display: 'flex', gap: '1rem', marginTop: '1rem'}}>
@@ -418,6 +402,7 @@ function DoctorDashboard() {
       </div>
     );
   }
+
 
   // Render medical record form modal
   if (showRecordForm && selectedPatient) {
