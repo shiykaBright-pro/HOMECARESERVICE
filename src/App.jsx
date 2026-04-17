@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import NurseDashboard from './pages/NurseDashboard';
+import Payment from './pages/Payment';
 import AdminDashboard from './pages/AdminDashboard';
 import Messages from './pages/Messages';
 import Reviews from './pages/Reviews';
@@ -32,6 +33,7 @@ function App() {
 <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
+          <Route path="/dashboard/patient/payment" element={<Payment />} />
           <Route path="/dashboard/doctor" element={<DoctorDashboard />} />
           <Route path="/dashboard/nurse" element={<NurseDashboard />} />
           <Route path="/dashboard/admin" element={<AdminDashboard />} />

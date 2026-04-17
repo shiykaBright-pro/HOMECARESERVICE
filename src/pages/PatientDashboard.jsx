@@ -664,6 +664,7 @@ function PatientDashboard() {
           <a href="#doctors" className={activeTab === 'doctors' ? 'active' : ''} onClick={() => {setActiveTab('doctors'); setSidebarOpen(false);}}>Find Doctors</a>
           <a href="#messages" className={activeTab === 'messages' ? 'active' : ''} onClick={() => {setActiveTab('messages'); setSidebarOpen(false);}}>Messages</a>
           <a href="#reviews" className={activeTab === 'reviews' ? 'active' : ''} onClick={() => {setActiveTab('reviews'); setSidebarOpen(false);}}>Reviews</a>
+          <a href="#payments" className={activeTab === 'payments' ? 'active' : ''} onClick={() => {setActiveTab('payments'); setSidebarOpen(false); navigate('/dashboard/patient/payment');}}>Payments</a>
           <a href="#profile" className={activeTab === 'profile' ? 'active' : ''} onClick={() => {setActiveTab('profile'); setSidebarOpen(false);}}>My Profile</a>
           <a href="#logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</a>
         </nav>

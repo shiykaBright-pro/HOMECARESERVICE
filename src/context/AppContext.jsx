@@ -13,9 +13,9 @@ const initialUsers = [
 ];
 
 const initialAppointments = [
-  { id: 1, patientId: 1, patientName: 'John Doe', providerId: 2, providerName: 'Dr. Sarah Johnson', service: 'General Consultation', date: '2026-02-15', time: '10:00 AM', status: 'Confirmed', type: 'home', notes: 'Follow-up visit', price: 50 },
-  { id: 2, patientId: 1, patientName: 'John Doe', providerId: 3, providerName: 'Nurse Mike Brown', service: 'Nursing Care', date: '2026-02-18', time: '2:00 PM', status: 'Pending', type: 'home', notes: 'Wound dressing', price: 40 },
-  { id: 3, patientId: 1, patientName: 'John Doe', providerId: 5, providerName: 'Dr. John Smith', service: 'Cardiology', date: '2026-02-20', time: '11:00 AM', status: 'Confirmed', type: 'home', notes: 'Heart checkup', price: 60 },
+  { id: 1, patientId: 1, patientName: 'John Doe', providerId: 2, providerName: 'Dr. Sarah Johnson', service: 'General Consultation', date: '2026-02-15', time: '10:00 AM', status: 'Confirmed', type: 'home', notes: 'Follow-up visit', price: 50, payment_status: 'paid' },
+  { id: 2, patientId: 1, patientName: 'John Doe', providerId: 3, providerName: 'Nurse Mike Brown', service: 'Nursing Care', date: '2026-02-18', time: '2:00 PM', status: 'Pending', type: 'home', notes: 'Wound dressing', price: 40, payment_status: 'pending' },
+  { id: 3, patientId: 1, patientName: 'John Doe', providerId: 5, providerName: 'Dr. John Smith', service: 'Cardiology', date: '2026-02-20', time: '11:00 AM', status: 'Confirmed', type: 'home', notes: 'Heart checkup', price: 60, payment_status: 'paid' },
 ];
 
 const initialMedicalRecords = [
@@ -252,7 +252,7 @@ export function AppProvider({ children }) {
 
   // Appointment functions
   const addAppointment = (appointment) => {
-    const newAppointment = { ...appointment, id: appointments.length + 1, status: 'Pending' };
+    const newAppointment = { ...appointment, id: appointments.length + 1, status: 'Pending', payment_status: 'pending' };
     setAppointments([...appointments, newAppointment]);
     
     // Add notification
