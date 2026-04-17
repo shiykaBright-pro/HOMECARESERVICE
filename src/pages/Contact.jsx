@@ -10,155 +10,179 @@ function Contact() {
     subject: '',
     message: ''
   });
+
   const [submitted, setSubmitted] = useState(false);
-  const [errors, setErrors] = useState({});
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
-    if (!formData.message.trim()) newErrors.message = 'Message is required';
-    return newErrors;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-      setErrors({});
-    }, 3000);
-  };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
-    if (errors[e.target.name]) {
-      setErrors({
-        ...errors,
-        [e.target.name]: ''
-      });
-    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setSubmitted(true);
+    setTimeout(() => {
+      setSubmitted(false);
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+    }, 3000);
   };
 
   return (
     <div className="contact-page">
       <Navbar />
       
-      <section className="contact-hero">
+      <div className="contact-hero">
         <h1>Contact Us</h1>
-        <p>Get in touch with our team. We're here to help.</p>
-      </section>
+        <p>We'd love to hear from you. Get in touch with us for any inquiries.</p>
+      </div>
 
       <div className="contact-container">
-        <div className="contact-info">
-          <div className="info-card address">
-            <h3>📍 Location</h3>
-            <p>Buea Medical District<br/>South West Region</p>
+        <div className="contact-info-section">
+          <div className="contact-info-card">
+            <div className="info-icon"></div>
+            <div className="info-content">
+              <h3>Our Address</h3>
+              <p>123 Healthcare Avenue Buea<br />Medical District, City 12345</p>
+            </div>
           </div>
-          <div className="info-card phone">
-            <h3>📞 Phone</h3>
-            <p>+237 679 109 117</p>
+          
+          <div className="contact-info-card">
+            <div className="info-icon"></div>
+            <div className="info-content">
+              <h3>Phone Number</h3>
+              <p>+237 679109117<br />+237 673233297</p>
+            </div>
           </div>
-          <div className="info-card email">
-            <h3>✉️ Email</h3>
-            <p>info@homecare.cm</p>
+          
+          <div className="contact-info-card">
+            <div className="info-icon"></div>
+            <div className="info-content">
+              <h3>Email Address</h3>
+              <p>shiyka@homecare.com<br />Bright@homecare.com</p>
+            </div>
           </div>
-          <div className="info-card hours">
-            <h3>🕒 Hours</h3>
-            <p>Mon-Fri 8AM-8PM<br/>Sat-Sun 9AM-5PM</p>
+          
+          <div className="contact-info-card">
+            <div className="info-icon"></div>
+            <div className="info-content">
+              <h3>Working Hours</h3>
+              <p>Mon - Fri: 8:00 AM - 8:00 PM<br />Sat - Sun: 9:00 AM - 5:00 PM</p>
+            </div>
           </div>
         </div>
 
-        <div className="contact-form-container">
-          <h2>Send Message</h2>
+        <div className="contact-form-section">
+          <div className="form-header">
+            <h2>Send us a Message</h2>
+            <p>Fill out the form below and we'll get back to you as soon as possible.</p>
+          </div>
+
           {submitted ? (
             <div className="success-message">
+              <span className="success-icon">✓</span>
               <h3>Thank You!</h3>
-              <p>Your message has been sent. We'll reply soon.</p>
+              <p>Your message has been sent successfully. We'll contact you soon.</p>
             </div>
           ) : (
             <form className="contact-form" onSubmit={handleSubmit}>
-              <div className="form-group">
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="Full Name *"
-                />
-                {errors.name && <span className="error">{errors.name}</span>}
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="name">Full Name</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Shiyka Bright"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="email">Email Address</label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="shiyka@example.com"
+                    required
+                  />
+                </div>
               </div>
-              <div className="form-group">
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="Email *"
-                />
-                {errors.email && <span className="error">{errors.email}</span>}
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="phone">Phone Number</label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+237 673233297"
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="subject">Subject</label>
+                  <select
+                    id="subject"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select a subject</option>
+                    <option value="general">General Inquiry</option>
+                    <option value="appointment">Book an Appointment</option>
+                    <option value="feedback">Feedback</option>
+                    <option value="complaint">Complaint</option>
+                    <option value="partnership">Partnership</option>
+                    <option value="career">Career</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
               </div>
+
               <div className="form-group">
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="Phone"
-                />
-              </div>
-              <div className="form-group">
-                <select name="subject" value={formData.subject} onChange={handleChange}>
-                  <option value="">Subject</option>
-                  <option value="general">General Inquiry</option>
-                  <option value="appointment">Appointment</option>
-                  <option value="support">Support</option>
-                </select>
-              </div>
-              <div className="form-group">
+                <label htmlFor="message">Message</label>
                 <textarea
+                  id="message"
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
-                  placeholder="Message *"
+                  placeholder="How can we help you?"
                   rows="5"
+                  required
                 ></textarea>
-                {errors.message && <span className="error">{errors.message}</span>}
               </div>
+
               <button type="submit" className="submit-btn">
                 Send Message
+                <span className="btn-icon">→</span>
               </button>
             </form>
           )}
         </div>
       </div>
 
-      <section className="contact-map">
-        <h2>Our Location</h2>
-        <div className="map-wrapper">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15868.8!2d9.234!3d4.159!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0!2zNOKwnCDDjMww4ZqP!5e0!3m2!1sen!2scm!4v1699999999999"
-            width="100%"
-            height="400"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade">
-          </iframe>
+      <div className="map-section">
+        <div className="map-placeholder">
+          <span className="map-icon">🗺️</span>
+          <p>Map View - Our Location</p>
         </div>
-      </section>
+      </div>
+
+      <footer className="footer-modern">
+        <div className="footer-bottom">
+          <p>&copy; 2026 HomeCare. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
   );
 }
 
 export default Contact;
-
-

@@ -1,14 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-
 import './Dashboard.css';
 
 function NurseDashboard() {
   const navigate = useNavigate();
-  const { currentUser, users, appointments, notifications, messages, sendMessage, getConversation, updateAppointment, addPrescription, logout, prescriptions, getUserPrescriptions } = useApp();
-
-
+  const { currentUser, users, appointments, notifications, messages, sendMessage, getConversation, updateAppointment, logout } = useApp();
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -20,16 +17,6 @@ function NurseDashboard() {
   const [chatMessage, setChatMessage] = useState('');
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({});
-
-  // Prescription form state (copied from DoctorDashboard)
-  const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
-  const [prescriptionForm, setPrescriptionForm] = useState({
-    medication: '',
-    dosage: '',
-    instructions: ''
-  });
-
-
 
   // Get appointments for this nurse
   const nurseAppointments = appointments.filter(apt => apt.providerId === currentUser?.id);
@@ -68,9 +55,9 @@ function NurseDashboard() {
       navigate('/login');
     } else if (currentUser.role !== 'nurse') {
       switch(currentUser.role) {
-        case 'patient': navigate('/patient-dashboard'); break;
-        case 'doctor': navigate('/doctor-dashboard'); break;
-        case 'admin': navigate('/admin-dashboard'); break;
+        case 'patient': navigate('/dashboard/patient'); break;
+        case 'doctor': navigate('/dashboard/doctor'); break;
+        case 'admin': navigate('/dashboard/admin'); break;
       }
     } else {
       setProfileForm({
@@ -152,41 +139,6 @@ function NurseDashboard() {
     alert('Appointment marked as completed!');
   };
 
-  const handlePrescriptionSubmit = (e) => {
-    e.preventDefault();
-    
-    // Role check - NURSE ONLY
-    if (currentUser.role !== 'nurse') {
-      alert('Only nurses can create prescriptions in this portal');
-      return;
-    }
-    
-    // Validation
-    const { medication, dosage, instructions } = prescriptionForm;
-    if (!selectedPatient || !medication.trim() || !dosage.trim() || !instructions.trim()) {
-      alert('All fields (Medication, Dosage, Instructions) are required');
-      return;
-    }
-
-    try {
-      addPrescription({
-        provider_id: currentUser.id,
-        patient_id: selectedPatient.id,
-        medication: medication.trim(),
-        dosage: dosage.trim(),
-        instructions: instructions.trim()
-      });
-
-      alert('Prescription created successfully!');
-      setShowPrescriptionForm(false);
-      setPrescriptionForm({ medication: '', dosage: '', instructions: '' });
-      setSelectedPatient(null);
-    } catch (error) {
-      alert('Error creating prescription: ' + error.message);
-    }
-  };
-
-
   const handleViewPatient = (patient) => {
     const patientAppointments = appointments.filter(a => a.patientId === patient.id && a.providerId === currentUser?.id);
     
@@ -226,12 +178,6 @@ function NurseDashboard() {
               setShowModal(false);
               navigate(`/video-call/${patient.id}`);
             }}>📹 Video Call</button>
-    <button className="btn-edit" onClick={() => {
-      setShowModal(false);
-      setSelectedPatient(patient);
-      setShowPrescriptionForm(true);
-    }}>💊 Prescription</button>
-
             <button className="btn-view" onClick={() => {
               setShowModal(false);
               alert('Medical record upload feature coming soon!');
@@ -242,7 +188,6 @@ function NurseDashboard() {
     });
     setShowModal(true);
   };
-
 
   const handleSendMessage = (e) => {
     e.preventDefault();
@@ -497,14 +442,9 @@ function NurseDashboard() {
                           <button className="btn-start" onClick={() => handleCompleteAppointment(apt.id)}>Complete</button>
                         )}
                         {apt.patientId && (
-    <button className="btn-video" onClick={() => {
-      setShowModal(false);
-      setSelectedPatient(users.find(u => u.id === apt.patientId));
-      setShowPrescriptionForm(true);
-    }} style={{marginLeft: '0.5rem'}}>
-      💊
-    </button>
-
+                          <button className="btn-video" onClick={() => navigate(`/video-call/${apt.patientId}`)} style={{marginLeft: '0.5rem'}}>
+                            📹
+                          </button>
                         )}
                       </td>
                     </tr>

@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useState, useEffect, useRef } from 'react';
 import './Navbar.css';
@@ -12,10 +12,8 @@ function Navbar() {
   
   const unreadCount = notifications.filter(n => !n.read && n.userId === currentUser?.id).length;
 
-  const navigate = useNavigate();
   const handleLogout = () => {
     logout();
-    navigate('/');
     setIsMenuOpen(false);
   };
 
@@ -80,8 +78,6 @@ function Navbar() {
         <Link to="/services" onClick={() => setIsMenuOpen(false)}>Services</Link>
         <Link to="/about" onClick={() => setIsMenuOpen(false)}>About</Link>
         <Link to="/contact" onClick={() => setIsMenuOpen(false)}>Contact</Link>
-        <Link to="/reviews" className="reviews-nav-link" onClick={() => setIsMenuOpen(false)}>⭐ Reviews</Link>
-        <Link to="/emergency" className="emergency-nav-link" onClick={() => setIsMenuOpen(false)}>🚨 Emergency</Link>
         
         {currentUser ? (
           <>
@@ -89,11 +85,11 @@ function Navbar() {
               Messages
               {unreadCount > 0 && <span className="badge">{unreadCount}</span>}
             </Link>
-            {/* Removed duplicate Reviews link for logged-in users */}
+            <Link to="/reviews" onClick={() => setIsMenuOpen(false)}>Reviews</Link>
             <div className="user-menu">
               <Link to="" className="user-name">{currentUser.name}</Link>
               <div className="dropdown-content">
-                <Link to={`/${currentUser.role}-dashboard`} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                <Link to={`/dashboard/${currentUser.role}`} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
                 <Link to="/" onClick={handleLogout}>Logout</Link>
               </div>
             </div>

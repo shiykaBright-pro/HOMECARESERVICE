@@ -150,17 +150,22 @@ function PatientDashboard() {
   };
 
   const handleViewPrescription = (prescription) => {
-    const provider = users.find(u => u.id === prescription.provider_id);
     setModalContent({
-      title: `Prescription from ${provider?.name || 'Provider'}`,
+      title: 'Prescription Details',
       content: (
         <div className="modal-details">
-          <p><strong>Date:</strong> {prescription.created_at ? new Date(prescription.created_at).toLocaleDateString() : 'Recent'}</p>
-          <p><strong>Provider:</strong> {provider?.name || 'Unknown'}</p>
-          <div className="medication-item">
-            <p><strong>Medication:</strong> {prescription.medication}</p>
-            <p><strong>Dosage:</strong> {prescription.dosage}</p>
-            <p><strong>Instructions:</strong> {prescription.instructions}</p>
+          <p><strong>Date:</strong> {prescription.date}</p>
+          <p><strong>Doctor:</strong> {prescription.doctorName}</p>
+          <p><strong>Status:</strong> <span className={`status ${prescription.status.toLowerCase()}`}>{prescription.status}</span></p>
+          <p><strong>Notes:</strong> {prescription.notes}</p>
+          <div className="medications-list">
+            <h4>Medications:</h4>
+            {prescription.medications?.map((med, index) => (
+              <div key={index} className="medication-item">
+                <p><strong>{med.name}</strong> - {med.dosage}</p>
+                <p>Frequency: {med.frequency} for {med.duration}</p>
+              </div>
+            ))}
           </div>
         </div>
       )
@@ -168,10 +173,9 @@ function PatientDashboard() {
     setShowModal(true);
   };
 
-
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
 
   // Filter functions
@@ -660,7 +664,6 @@ function PatientDashboard() {
           <a href="#doctors" className={activeTab === 'doctors' ? 'active' : ''} onClick={() => {setActiveTab('doctors'); setSidebarOpen(false);}}>Find Doctors</a>
           <a href="#messages" className={activeTab === 'messages' ? 'active' : ''} onClick={() => {setActiveTab('messages'); setSidebarOpen(false);}}>Messages</a>
           <a href="#reviews" className={activeTab === 'reviews' ? 'active' : ''} onClick={() => {setActiveTab('reviews'); setSidebarOpen(false);}}>Reviews</a>
-          <a href="#payments" className={activeTab === 'payments' ? 'active' : ''} onClick={() => {setActiveTab('payments'); setSidebarOpen(false); navigate('/dashboard/patient/payment');}}>Payments</a>
           <a href="#profile" className={activeTab === 'profile' ? 'active' : ''} onClick={() => {setActiveTab('profile'); setSidebarOpen(false);}}>My Profile</a>
           <a href="#logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</a>
         </nav>
@@ -669,11 +672,6 @@ function PatientDashboard() {
       <main className="dashboard-content">
         <header className="dashboard-header">
           <h1>Welcome, {currentUser?.name || 'Patient'}!</h1>
-          <div className="profile-icon-container">
-            <button className="profile-icon-btn" onClick={() => setActiveTab('profile')}>
-              <div className="profile-avatar-small">{currentUser?.name?.charAt(0) || 'P'}</div>
-            </button>
-          </div>
         </header>
         {renderContent()}
       </main>

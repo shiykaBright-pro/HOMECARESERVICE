@@ -9,13 +9,14 @@ const AuthRoute = ({ children }) => {
 
   useEffect(() => {
     if (currentUser) {
+      // Redirect to appropriate dashboard
       const roleDashboards = {
-        patient: '/patient-dashboard',
-        doctor: '/doctor-dashboard',
-        nurse: '/nurse-dashboard',
-        admin: '/admin-dashboard'
+        patient: '/dashboard/patient',
+        doctor: '/dashboard/doctor',
+        nurse: '/dashboard/nurse',
+        admin: '/dashboard/admin'
       };
-      navigate(roleDashboards[currentUser.role] || '/patient-dashboard', { replace: true });
+      navigate(roleDashboards[currentUser.role] || '/dashboard/patient', { replace: true });
     }
   }, [currentUser, navigate]);
 
@@ -27,5 +28,4 @@ const AuthRoute = ({ children }) => {
 };
 
 export default AuthRoute;
-
 

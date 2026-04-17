@@ -1,6 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase, googleLogin, supabaseLogout } from "../supabaseClient.js";
-import { supabaseDB } from '../lib/supabase.js';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const AppContext = createContext();
 
@@ -13,9 +11,9 @@ const initialUsers = [
 ];
 
 const initialAppointments = [
-  { id: 1, patientId: 1, patientName: 'John Doe', providerId: 2, providerName: 'Dr. Sarah Johnson', service: 'General Consultation', date: '2026-02-15', time: '10:00 AM', status: 'Confirmed', type: 'home', notes: 'Follow-up visit', price: 50, payment_status: 'paid' },
-  { id: 2, patientId: 1, patientName: 'John Doe', providerId: 3, providerName: 'Nurse Mike Brown', service: 'Nursing Care', date: '2026-02-18', time: '2:00 PM', status: 'Pending', type: 'home', notes: 'Wound dressing', price: 40, payment_status: 'pending' },
-  { id: 3, patientId: 1, patientName: 'John Doe', providerId: 5, providerName: 'Dr. John Smith', service: 'Cardiology', date: '2026-02-20', time: '11:00 AM', status: 'Confirmed', type: 'home', notes: 'Heart checkup', price: 60, payment_status: 'paid' },
+  { id: 1, patientId: 1, patientName: 'John Doe', providerId: 2, providerName: 'Dr. Sarah Johnson', service: 'General Consultation', date: '2026-02-15', time: '10:00 AM', status: 'Confirmed', type: 'home', notes: 'Follow-up visit', price: 50 },
+  { id: 2, patientId: 1, patientName: 'John Doe', providerId: 3, providerName: 'Nurse Mike Brown', service: 'Nursing Care', date: '2026-02-18', time: '2:00 PM', status: 'Pending', type: 'home', notes: 'Wound dressing', price: 40 },
+  { id: 3, patientId: 1, patientName: 'John Doe', providerId: 5, providerName: 'Dr. John Smith', service: 'Cardiology', date: '2026-02-20', time: '11:00 AM', status: 'Confirmed', type: 'home', notes: 'Heart checkup', price: 60 },
 ];
 
 const initialMedicalRecords = [
@@ -25,7 +23,7 @@ const initialMedicalRecords = [
 ];
 
 const initialPrescriptions = [
-  { id: 1, provider_id: 2, patient_id: 1, medication: 'Vitamin D3 1000IU once daily', dosage: '1000IU', instructions: 'Take with food daily for 30 days', created_at: '2026-01-10T10:00:00Z' },
+  { id: 1, patientId: 1, doctorId: 2, doctorName: 'Dr. Sarah Johnson', date: '2026-01-10', medications: [{ name: 'Vitamin D3', dosage: '1000IU', frequency: 'Once daily', duration: '30 days' }, { name: 'Calcium', dosage: '500mg', frequency: 'Twice daily', duration: '30 days' }], notes: 'Take with food', status: 'Active' },
 ];
 
 const initialNotifications = [
@@ -88,65 +86,6 @@ export function AppProvider({ children }) {
     const saved = localStorage.getItem('reviews');
     return saved ? JSON.parse(saved) : initialReviews;
   });
-
-  const getDashboardPath = (role) => {
-    const roleDashboards = {
-      admin: '/admin-dashboard',
-      doctor: '/doctor-dashboard',
-      nurse: '/nurse-dashboard',
-      patient: '/patient-dashboard'
-    };
-    return roleDashboards[role] || '/patient-dashboard';
-  };
-
-  const signInWithEmailPassword = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) {
-      return { success: false, error: error.message || 'Login failed' };
-    }
-
-    const userId = data?.user?.id;
-    if (!userId) {
-      return { success: false, error: 'Supabase did not return a valid user.' };
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, role, full_name, email, phone')
-      .eq('id', userId)
-      .single();
-
-    if (profileError || !profile) {
-      return {
-        success: false,
-        error: 'Unable to determine your role. Please contact support.'
-      };
-    }
-
-    if (!['admin', 'doctor', 'nurse', 'patient'].includes(profile.role)) {
-      return {
-        success: false,
-        error: 'Your account role is invalid. Please contact support.'
-      };
-    }
-
-    const sessionUser = {
-      id: userId,
-      email: data.user.email || profile.email,
-      role: profile.role,
-      name: profile.full_name || profile.name || '',
-      ...profile
-    };
-
-    setCurrentUser(sessionUser);
-    localStorage.setItem('currentUser', JSON.stringify(sessionUser));
-
-    return { success: true, user: sessionUser };
-  };
 
   // Video call state
   const [videoCallState, setVideoCallState] = useState({
@@ -240,6 +179,39 @@ export function AppProvider({ children }) {
     );
   };
 
+  // Save to localStorage whenever data changes
+  useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+  }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('appointments', JSON.stringify(appointments));
+  }, [appointments]);
+
+  useEffect(() => {
+    localStorage.setItem('medicalRecords', JSON.stringify(medicalRecords));
+  }, [medicalRecords]);
+
+  useEffect(() => {
+    localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
+  }, [prescriptions]);
+
+  useEffect(() => {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
+  useEffect(() => {
+    localStorage.setItem('messages', JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem('reviews', JSON.stringify(reviews));
+  }, [reviews]);
+
   // Auth functions
   const login = (email, password) => {
     const user = users.find(u => u.email === email && u.password === password);
@@ -261,63 +233,28 @@ export function AppProvider({ children }) {
     return { success: true, user: newUser };
   };
 
-  const logout = async () => {
-    await supabaseLogout();
+  const logout = () => {
     setCurrentUser(null);
   };
 
-  const loginWithGoogle = async () => {
-    try {
-      await googleLogin();
-      return { success: true };
-    } catch (error) {
-      console.error('Google login error:', error);
-      return { success: false, error: error.message || 'Google login failed' };
-    }
-  };
-
-// Load real data from Supabase on login
-  const loadUserData = useCallback(async (supabaseUserId) => {
-    try {
-      const { profile, ...data } = await supabaseDB.loadUserData(supabaseUserId);
-      
-      // Update user profile
-      setUsers(prev => {
-        const updated = prev.map(u => u.supabase_user_id === supabaseUserId ? { ...u, ...profile } : u);
-        if (!updated.find(u => u.supabase_user_id === supabaseUserId)) {
-          updated.push(profile);
-        }
-        return updated;
-      });
-      
-      // Set data
-      setAppointments(data.appointments || []);
-      setMedicalRecords(data.medical_records || []);
-      setPrescriptions(data.prescriptions || []);
-      setNotifications(data.notifications || []);
-      setMessages(data.messages || []);
-      setReviews(data.reviews || []);
-    } catch (error) {
-      console.error('Load data failed:', error);
-    }
-  }, []);
-
   // Appointment functions
-  const addAppointment = async (appointment) => {
-    try {
-      const newAppointment = await supabaseDB.createAppointment({
-        ...appointment,
-        status: 'Pending'
-      });
-      
-      // Refresh data
-      await loadUserData(currentUser.supabase_user_id);
-      
-      return newAppointment;
-    } catch (error) {
-      console.error('Create appointment failed:', error);
-      throw error;
-    }
+  const addAppointment = (appointment) => {
+    const newAppointment = { ...appointment, id: appointments.length + 1, status: 'Pending' };
+    setAppointments([...appointments, newAppointment]);
+    
+    // Add notification
+    const newNotification = {
+      id: notifications.length + 1,
+      userId: appointment.providerId,
+      title: 'New Appointment Request',
+      message: `${appointment.patientName} requested an appointment for ${appointment.service}`,
+      time: 'Just now',
+      read: false,
+      type: 'appointment'
+    };
+    setNotifications([newNotification, ...notifications]);
+    
+    return newAppointment;
   };
 
   const updateAppointment = (id, updates) => {
@@ -336,27 +273,23 @@ export function AppProvider({ children }) {
   };
 
   // Prescription functions
-  const addPrescription = async (prescription) => {
-    // Client validation
-    if (!prescription.provider_id || !prescription.patient_id || !prescription.medication?.trim() || !prescription.dosage?.trim() || !prescription.instructions?.trim()) {
-      throw new Error('All fields (medication, dosage, instructions) are required');
-    }
-
-    try {
-      const newPrescription = await supabaseDB.createPrescription(prescription);
-      
-      // Refresh data
-      await loadUserData(currentUser.supabase_user_id);
-      
-      return newPrescription;
-    } catch (error) {
-      console.error('Create prescription failed:', error);
-      throw error;
-    }
-  };
-
-  const getUserPrescriptions = (userId) => {
-    return prescriptions.filter(p => p.patient_id === userId);
+  const addPrescription = (prescription) => {
+    const newPrescription = { ...prescription, id: prescriptions.length + 1, date: new Date().toISOString().split('T')[0], status: 'Active' };
+    setPrescriptions([...prescriptions, newPrescription]);
+    
+    // Add notification for patient
+    const patientNotification = {
+      id: notifications.length + 1,
+      userId: prescription.patientId,
+      title: 'New Prescription',
+      message: `You have a new prescription from ${prescription.doctorName}`,
+      time: 'Just now',
+      read: false,
+      type: 'prescription'
+    };
+    setNotifications([patientNotification, ...notifications]);
+    
+    return newPrescription;
   };
 
   // Notification functions
@@ -453,51 +386,6 @@ export function AppProvider({ children }) {
     };
   };
 
-  // Supabase auth listener
-  useEffect(() => {
-    // Handle initial auth state on mount/redirect
-    const handleAuthChange = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const userEmail = user.email;
-          let appUser = users.find(u => u.email === userEmail);
-          
-          if (!appUser) {
-            // Create new patient user
-            appUser = {
-              id: users.length + 1,
-              name: user.user_metadata?.full_name || userEmail.split('@')[0],
-              email: userEmail,
-              role: 'patient',
-              status: 'active',
-              joinDate: new Date().toISOString().split('T')[0],
-              authProvider: 'google'
-            };
-            setUsers([...users, appUser]);
-          }
-          
-          setCurrentUser(appUser);
-          localStorage.setItem('currentUser', JSON.stringify(appUser));
-        }
-      }
-    };
-
-    handleAuthChange();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
-        handleAuthChange();
-      } else if (event === 'SIGNED_OUT') {
-        setCurrentUser(null);
-        localStorage.removeItem('currentUser');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [users]);
-
   const value = {
     // Users
     users,
@@ -505,10 +393,6 @@ export function AppProvider({ children }) {
     login,
     register,
     logout,
-    loginWithGoogle,
-    signInWithEmailPassword,
-    getDashboardPath,
-    setCurrentUser,
     
     // Appointments
     appointments,
@@ -524,7 +408,6 @@ export function AppProvider({ children }) {
     // Prescriptions
     prescriptions,
     addPrescription,
-    getUserPrescriptions,
     
     // Notifications
     notifications,
@@ -572,4 +455,3 @@ export function useApp() {
   }
   return context;
 }
-
