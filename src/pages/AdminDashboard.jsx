@@ -1,8 +1,11 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useApp } from '../context/AppContext';
 import './Dashboard.css';
 
 function AdminDashboard() {
+  const { logout } = useApp();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -165,6 +168,11 @@ function AdminDashboard() {
 
   const handleConfigureSettings = (setting) => {
     alert(`${setting} configuration coming soon!`);
+  };
+
+  const handleLogout = () => {
+    logout();
+    // Note: Link handles navigation to "/"
   };
 
   // Mock license verification service
@@ -608,7 +616,7 @@ function AdminDashboard() {
           <a href="#services" className={activeTab === 'services' ? 'active' : ''} onClick={() => {setActiveTab('services'); setSidebarOpen(false);}}>Services</a>
           <a href="#reports" className={activeTab === 'reports' ? 'active' : ''} onClick={() => {setActiveTab('reports'); setSidebarOpen(false);}}>Reports</a>
           <a href="#settings" className={activeTab === 'settings' ? 'active' : ''} onClick={() => {setActiveTab('settings'); setSidebarOpen(false);}}>Settings</a>
-          <Link to="/" onClick={() => setSidebarOpen(false)}>Logout</Link>
+<button className="sidebar-logout" onClick={() => { handleLogout(); setSidebarOpen(false); }}>Logout</button>
         </nav>
       </aside>
 

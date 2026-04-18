@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import Navbar from '../components/Navbar';
 import './Login.css';
-
+import './Dashboard.css';
+import './PatientDashboard.jsx';
 function Login() {
   const navigate = useNavigate();
   const { login, users } = useApp();
@@ -51,7 +52,7 @@ function Login() {
           navigate('/dashboard/admin');
           break;
         default:
-          navigate('/dashboard/patient');
+          navigate('/'); // fallback  
       }
     } else {
       setError(result.error);

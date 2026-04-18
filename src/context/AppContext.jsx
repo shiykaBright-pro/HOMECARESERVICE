@@ -11,10 +11,11 @@ const initialUsers = [
 ];
 
 const initialAppointments = [
-  { id: 1, patientId: 1, patientName: 'John Doe', providerId: 2, providerName: 'Dr. Sarah Johnson', service: 'General Consultation', date: '2026-02-15', time: '10:00 AM', status: 'Confirmed', type: 'home', notes: 'Follow-up visit', price: 50 },
-  { id: 2, patientId: 1, patientName: 'John Doe', providerId: 3, providerName: 'Nurse Mike Brown', service: 'Nursing Care', date: '2026-02-18', time: '2:00 PM', status: 'Pending', type: 'home', notes: 'Wound dressing', price: 40 },
-  { id: 3, patientId: 1, patientName: 'John Doe', providerId: 5, providerName: 'Dr. John Smith', service: 'Cardiology', date: '2026-02-20', time: '11:00 AM', status: 'Confirmed', type: 'home', notes: 'Heart checkup', price: 60 },
+  { id: 1, patientId: 1, patientName: 'John Doe', providerId: 2, providerName: 'Dr. Sarah Johnson', service: 'General Consultation', date: '2026-02-15', time: '10:00 AM', status: 'Confirmed', payment_status: 'paid', type: 'home', notes: 'Follow-up visit', price: 50 },
+  { id: 2, patientId: 1, patientName: 'John Doe', providerId: 3, providerName: 'Nurse Mike Brown', service: 'Nursing Care', date: '2026-02-18', time: '2:00 PM', status: 'Pending', payment_status: 'pending', type: 'home', notes: 'Wound dressing', price: 40 },
+  { id: 3, patientId: 1, patientName: 'John Doe', providerId: 5, providerName: 'Dr. John Smith', service: 'Cardiology', date: '2026-02-20', time: '11:00 AM', status: 'Confirmed', payment_status: 'paid', type: 'home', notes: 'Heart checkup', price: 60 },
 ];
+
 
 const initialMedicalRecords = [
   { id: 1, patientId: 1, title: 'Annual Checkup', date: '2026-01-10', doctor: 'Dr. Sarah Johnson', type: 'Checkup', file: null, content: 'Patient is in good health. All vitals normal.' },
@@ -239,7 +240,8 @@ export function AppProvider({ children }) {
 
   // Appointment functions
   const addAppointment = (appointment) => {
-    const newAppointment = { ...appointment, id: appointments.length + 1, status: 'Pending' };
+const newAppointment = { ...appointment, id: appointments.length + 1, status: 'Pending', payment_status: 'pending' };
+
     setAppointments([...appointments, newAppointment]);
     
     // Add notification

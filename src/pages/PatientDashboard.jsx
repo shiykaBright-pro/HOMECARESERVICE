@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import './Dashboard.css';
+import Navbar from '../components/Navbar';
 
 function PatientDashboard() {
   const navigate = useNavigate();
   const { currentUser, users, appointments, medicalRecords, prescriptions, notifications, addAppointment, cancelAppointment, logout } = useApp();
   const [activeTab, setActiveTab] = useState('overview');
-  const [showBooking, setShowBooking] = useState(false);
+  // const [showBooking, setShowBooking] = useState(false); // Removed for dedicated booking page
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -49,57 +50,25 @@ function PatientDashboard() {
     });
   }, [currentUser]);
 
-  const [bookingForm, setBookingForm] = useState({
-    service: '',
-    providerId: '',
-    date: '',
-    time: '',
-    notes: ''
-  });
+  // const [bookingForm, setBookingForm] = useState({
+  //   service: '',
+  //   providerId: '',
+  //   date: '',
+  //   time: '',
+  //   notes: ''
+  // }); // Removed for dedicated booking page
 
-  const servicePrices = {
-    'General Consultation': 50,
-    'Nursing Care': 40,
-    'Physical Therapy': 60,
-    'Medical Tests': 30,
-    'Elderly Care': 80,
-    'Post-Surgery Care': 70
-  };
+  // const servicePrices = {
+  //   'General Consultation': 50,
+  //   'Nursing Care': 40,
+  //   'Physical Therapy': 60,
+  //   'Medical Tests': 30,
+  //   'Elderly Care': 80,
+  //   'Post-Surgery Care': 70
+  // }; // Moved to BookAppointment
 
-  const handleBookingChange = (e) => {
-    setBookingForm({
-      ...bookingForm,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleBookingSubmit = (e) => {
-    e.preventDefault();
-    if (!bookingForm.service || !bookingForm.date || !bookingForm.time) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    const provider = users.find(u => u.id === parseInt(bookingForm.providerId));
-    const newAppointment = {
-      patientId: currentUser.id,
-      patientName: currentUser.name,
-      providerId: parseInt(bookingForm.providerId),
-      providerName: provider?.name || 'To be assigned',
-      service: bookingForm.service,
-      date: bookingForm.date,
-      time: bookingForm.time,
-      notes: bookingForm.notes,
-      type: 'home',
-      price: servicePrices[bookingForm.service] || 50
-    };
-
-    addAppointment(newAppointment);
-    alert('Appointment request submitted successfully!');
-    setShowBooking(false);
-    setBookingForm({ service: '', providerId: '', date: '', time: '', notes: '' });
-    setActiveTab('appointments');
-  };
+// const handleBookingChange = (e) => { ... }; // Removed for dedicated booking page
+  // const handleBookingSubmit = (e) => { ... }; // Removed for dedicated booking page
 
   const handleViewAppointment = (apt) => {
     setModalContent({
@@ -128,9 +97,7 @@ function PatientDashboard() {
   };
 
   const handleBookDoctor = (doc) => {
-    setBookingForm({ ...bookingForm, service: doc.specialty || 'General Consultation', providerId: doc.id });
-    setShowBooking(true);
-    setActiveTab('overview');
+    navigate('/book-appointment', { state: { prefill: { service: doc.specialty || 'General Consultation', providerId: doc.id } } });
   };
 
   const handleViewRecord = (record) => {
@@ -173,9 +140,9 @@ function PatientDashboard() {
     setShowModal(true);
   };
 
-  const handleLogout = () => {
+const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/login');
   };
 
   // Filter functions
@@ -229,63 +196,12 @@ function PatientDashboard() {
             <section>
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
                 <h2>Upcoming Appointments</h2>
-                <button className="btn-book" onClick={() => setShowBooking(!showBooking)}>
-                  {showBooking ? 'Cancel' : '+ Book New'}
+                <button className="btn-book" onClick={() => navigate('/book-appointment')}>
+                  + Book New
                 </button>
               </div>
               
-              {showBooking && (
-                <div className="booking-form-section">
-                  <h3>Book New Appointment</h3>
-                  <form onSubmit={handleBookingSubmit} className="booking-form">
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Select Doctor/Nurse</label>
-                        <select name="providerId" value={bookingForm.providerId} onChange={handleBookingChange} required>
-                          <option value="">Select Provider</option>
-                          {users.filter(u => u.role === 'doctor' || u.role === 'nurse').map(provider => (
-                            <option key={provider.id} value={provider.id}>
-                              {provider.name} - {provider.role === 'doctor' ? provider.specialty : 'Nurse'}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="form-group">
-                        <label>Service Type</label>
-                        <select name="service" value={bookingForm.service} onChange={handleBookingChange} required>
-                          <option value="">Select Service</option>
-                          <option value="General Consultation">General Consultation ($50)</option>
-                          <option value="Nursing Care">Nursing Care ($40)</option>
-                          <option value="Physical Therapy">Physical Therapy ($60)</option>
-                          <option value="Medical Tests">Medical Tests ($30)</option>
-                          <option value="Elderly Care">Elderly Care ($80)</option>
-                          <option value="Post-Surgery Care">Post-Surgery Care ($70)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Preferred Date</label>
-                        <input type="date" name="date" value={bookingForm.date} onChange={handleBookingChange} required min={new Date().toISOString().split('T')[0]} />
-                      </div>
-                      <div className="form-group">
-                        <label>Preferred Time</label>
-                        <select name="time" value={bookingForm.time} onChange={handleBookingChange} required>
-                          <option value="">Select Time</option>
-                          <option value="9:00 AM">Morning (9AM - 12PM)</option>
-                          <option value="12:00 PM">Afternoon (12PM - 4PM)</option>
-                          <option value="4:00 PM">Evening (4PM - 7PM)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>Additional Notes</label>
-                      <textarea name="notes" value={bookingForm.notes} onChange={handleBookingChange} placeholder="Describe your symptoms or concerns" />
-                    </div>
-                    <button type="submit" className="btn-submit">Submit Request</button>
-                  </form>
-                </div>
-              )}
+  {/* Inline booking form removed - use dedicated /book-appointment page */}
 
               {userAppointments.length > 0 ? (
                 <table className="appointments-table">
@@ -356,7 +272,7 @@ function PatientDashboard() {
           <section>
             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
               <h2>All Appointments</h2>
-              <button className="btn-book" onClick={() => setShowBooking(!showBooking)}>
+              <button className="btn-book" onClick={() => navigate('/book-appointment')}>
                 + Book New
               </button>
             </div>
@@ -659,13 +575,16 @@ function PatientDashboard() {
         </div>
         <nav className="sidebar-nav">
           <a href="#overview" className={activeTab === 'overview' ? 'active' : ''} onClick={() => {setActiveTab('overview'); setSidebarOpen(false);}}>Dashboard</a>
+
           <a href="#appointments" className={activeTab === 'appointments' ? 'active' : ''} onClick={() => {setActiveTab('appointments'); setSidebarOpen(false);}}>My Appointments</a>
+          <Link to="/dashboard/patient/payment" className="sidebar-link" onClick={() => setSidebarOpen(false)}>💳 Payments</Link>
+
           <a href="#records" className={activeTab === 'records' ? 'active' : ''} onClick={() => {setActiveTab('records'); setSidebarOpen(false);}}>Medical Records</a>
           <a href="#doctors" className={activeTab === 'doctors' ? 'active' : ''} onClick={() => {setActiveTab('doctors'); setSidebarOpen(false);}}>Find Doctors</a>
           <a href="#messages" className={activeTab === 'messages' ? 'active' : ''} onClick={() => {setActiveTab('messages'); setSidebarOpen(false);}}>Messages</a>
           <a href="#reviews" className={activeTab === 'reviews' ? 'active' : ''} onClick={() => {setActiveTab('reviews'); setSidebarOpen(false);}}>Reviews</a>
           <a href="#profile" className={activeTab === 'profile' ? 'active' : ''} onClick={() => {setActiveTab('profile'); setSidebarOpen(false);}}>My Profile</a>
-          <a href="#logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</a>
+<button className="sidebar-logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</button>
         </nav>
       </aside>
 

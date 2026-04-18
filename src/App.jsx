@@ -13,6 +13,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import Messages from './pages/Messages';
 import Reviews from './pages/Reviews';
 import VideoCall from './components/VideoCall';
+import Payment from './pages/Payment';
+import BookAppointment from './pages/BookAppointment';
 
 function App() {
   return (
@@ -27,12 +29,14 @@ function App() {
 <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
+          <Route path="/dashboard/patient/payment" element={<Payment />} />
           <Route path="/dashboard/doctor" element={<DoctorDashboard />} />
           <Route path="/dashboard/nurse" element={<NurseDashboard />} />
           <Route path="/dashboard/admin" element={<AdminDashboard />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/video-call/:id" element={<VideoCall />} />
+          <Route path="/book-appointment" element={<BookAppointment />} />
         </Routes>
 
       </Router>

@@ -650,7 +650,7 @@ function NurseDashboard() {
           <a href="#messages" className={activeTab === 'messages' ? 'active' : ''} onClick={() => {setActiveTab('messages'); setSidebarOpen(false);}}>Messages</a>
           <a href="#schedule" className={activeTab === 'schedule' ? 'active' : ''} onClick={() => {setActiveTab('schedule'); setSidebarOpen(false);}}>My Schedule</a>
           <a href="#profile" className={activeTab === 'profile' ? 'active' : ''} onClick={() => {setActiveTab('profile'); setSidebarOpen(false);}}>My Profile</a>
-          <a href="#logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</a>
+<button className="sidebar-logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</button>
         </nav>
       </aside>
 
