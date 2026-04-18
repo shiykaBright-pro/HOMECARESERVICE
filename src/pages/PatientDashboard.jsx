@@ -140,10 +140,17 @@ function PatientDashboard() {
     setShowModal(true);
   };
 
-const handleLogout = () => {
-    logout();
-    navigate('/login');
+const handleLogout = async () => {
+    try {
+      await logout(); // Clear context/session
+      localStorage.removeItem('currentUser'); // Clear app-specific session
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate('/login');
+    }
   };
+
 
   // Filter functions
   const filteredAppointments = userAppointments.filter(apt => {

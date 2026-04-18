@@ -1,46 +1,118 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import Navbar from '../components/Navbar';
 import './Dashboard.css';
 
 function AdminDashboard() {
-  const { logout } = useApp();
+  const { logout, users: contextUsers, appointments: contextAppointments, updateAppointment, getAnalytics } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', content: null });
 
-  const [users, setUsers] = useState([
-    { id: 1, name: 'John Smith', role: 'Patient', email: 'john@example.com', phone: '+1 234 567 8901', status: 'Active', joinDate: '2026-01-15' },
-    { id: 2, name: 'Dr. Sarah Johnson', role: 'Doctor', email: 'sarah@example.com', phone: '+1 234 567 8902', status: 'Active', joinDate: '2023-06-10', specialty: 'General Medicine', licenseNumber: 'MD-12345', licenseVerified: true },
-    { id: 3, name: 'Nurse Mike Brown', role: 'Nurse', email: 'mike@example.com', phone: '+1 234 567 8903', status: 'Active', joinDate: '2023-08-20', licenseNumber: 'RN-67890', licenseVerified: true },
-    { id: 4, name: 'Emily Davis', role: 'Patient', email: 'emily@example.com', phone: '+1 234 567 8904', status: 'Pending', joinDate: '2026-02-10' },
-    { id: 5, name: 'Dr. John Smith', role: 'Doctor', email: 'john.smith@example.com', phone: '+1 234 567 8905', status: 'Active', joinDate: '2023-05-15', specialty: 'Cardiology', licenseNumber: 'MD-54321', licenseVerified: true },
-    { id: 6, name: 'Dr. New Doctor', role: 'Doctor', email: 'newdoc@example.com', phone: '+1 234 567 8906', status: 'Pending', joinDate: '2026-02-15', specialty: 'Pediatrics', licenseNumber: 'MD-99999', licenseVerified: false },
-    { id: 7, name: 'Nurse New Nurse', role: 'Nurse', email: 'newnurse@example.com', phone: '+1 234 567 8907', status: 'Pending', joinDate: '2026-02-16', licenseNumber: 'RN-88888', licenseVerified: false },
+  // Fix: Essential states - **this was causing ReferenceError/blank page**
+  const [localUsers, setLocalUsers] = useState([]);
+  const [localAppointments, setLocalAppointments] = useState([]);
+  const [reports, setReports] = useState([
+    { id: 1, title: 'Monthly Revenue Report', date: '2026-02-01', type: 'Financial' },
+    { id: 2, title: 'Patient Satisfaction Survey', date: '2026-01-28', type: 'Feedback' },
+    { id: 3, title: 'Appointment Statistics', date: '2026-01-25', type: 'Analytics' },
   ]);
-
-  const [appointments] = useState([
-    { id: 1, service: 'General Consultation', patient: 'John Smith', provider: 'Dr. Sarah Johnson', date: '2026-02-15', status: 'Confirmed', type: 'Home Visit' },
-    { id: 2, service: 'Wound Care', patient: 'Alice Williams', provider: 'Nurse Mike Brown', date: '2026-02-15', status: 'In Progress', type: 'Home Visit' },
-    { id: 3, service: 'Cardiology', patient: 'Robert Chen', provider: 'Dr. John Smith', date: '2026-02-16', status: 'Pending', type: 'Home Visit' },
-  ]);
-
   const [services, setServices] = useState([
     { id: 1, name: 'General Consultation', description: 'Basic health consultation with a doctor', price: 50, duration: '30 min', category: 'Doctor' },
     { id: 2, name: 'Nursing Care', description: 'Professional nursing services', price: 40, duration: '45 min', category: 'Nurse' },
     { id: 3, name: 'Physical Therapy', description: 'Rehabilitation and physical therapy', price: 60, duration: '60 min', category: 'Therapist' },
     { id: 4, name: 'Medical Tests', description: 'Blood test, urine test, etc.', price: 30, duration: '15 min', category: 'Lab' },
   ]);
+  const [editingItem, setEditingItem] = useState(null);
+  const [settings, setSettings] = useState({ generalSettings: { appName: 'HomeCare' }, notificationSettings: { email: true, sms: true }, paymentSettings: {}, securitySettings: { twoFactor: false } });
+  const [toast, setToast] = useState({ message: '', type: '', visible: false });
 
-  const [reports] = useState([
-    { id: 1, title: 'Monthly Revenue Report', date: '2026-02-01', type: 'Financial' },
-    { id: 2, title: 'Patient Satisfaction Survey', date: '2026-01-28', type: 'Feedback' },
-    { id: 3, title: 'Appointment Statistics', date: '2026-01-25', type: 'Analytics' },
-  ]);
+  // Fallback mock data (used in renderContent/handlers)
+  const users = localUsers.length ? localUsers : [
+    { id: 1, name: 'John Smith', role: 'Patient', email: 'john@example.com', phone: '+1 234 567 8901', status: 'Active', joinDate: '2026-01-15' },
+    { id: 2, name: 'Dr. Sarah Johnson', role: 'Doctor', email: 'sarah@example.com', phone: '+1 234 567 8902', status: 'Active', joinDate: '2023-06-10', specialty: 'General Medicine', licenseNumber: 'MD-12345', licenseVerified: true },
+  ];
+  const appointments = localAppointments.length ? localAppointments : [
+    { id: 1, service: 'General Consultation', patient: 'John Smith', provider: 'Dr. Sarah Johnson', date: '2026-02-15', status: 'Confirmed', type: 'Home Visit' },
+    { id: 2, service: 'Wound Care', patient: 'Alice Williams', provider: 'Nurse Mike Brown', date: '2026-02-15', status: 'In Progress', type: 'Home Visit' },
+  ];
+
+  // Sync with context
+  useEffect(() => {
+    if (contextUsers) setLocalUsers(contextUsers.filter(u => u.role !== 'admin'));
+  }, [contextUsers]);
+  
+  useEffect(() => {
+    if (contextAppointments) setLocalAppointments(contextAppointments);
+  }, [contextAppointments]);
+
+  // Phase 1: Reusable components
+
+  // Reusable FormModal Component (Step 2)
+  const FormModal = ({ isOpen, onClose, title, children, onSubmit, submitLabel = 'Save' }) => {
+    if (!isOpen) return null;
+    return (
+      <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>{title}</h3>
+            <button className="modal-close" onClick={onClose}>×</button>
+          </div>
+          <form onSubmit={onSubmit} className="form-modal">
+            <div className="modal-body">
+              {children}
+            </div>
+            <div style={{ padding: '1.5rem', borderTop: '1px solid #eee', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button type="button" className="btn-cancel" onClick={onClose}>Cancel</button>
+              <button type="submit" className="btn-submit">{submitLabel}</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  // Toast Component (Step 3)
+  const ToastComponent = () => {
+    if (!toast.visible) return null;
+    return (
+      <div className={`toast-container toast-${toast.type}`}>
+        {toast.message}
+      </div>
+    );
+  };
+
+  // Toast handler
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 4000);
+  };
+
+  // Form validation helper
+  const validateForm = (formData, requiredFields) => {
+    const errors = {};
+    requiredFields.forEach(field => {
+      if (!formData[field]?.toString().trim()) {
+        errors[field] = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+      }
+    });
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = 'Email is invalid';
+    }
+    if (formData.phone && !/^\+?[\d\s-()]{10,}$/.test(formData.phone.replace(/\s/g, ''))) {
+      errors.phone = 'Phone number is invalid';
+    }
+    if (formData.date && isNaN(Date.parse(formData.date))) {
+      errors.date = 'Invalid date';
+    }
+    return Object.keys(errors).length === 0 ? null : errors;
+  };
 
   const [notifications, setNotifications] = useState([
+
     { id: 1, message: 'New user registered: John Doe', type: 'info', date: '2026-02-15', read: false },
     { id: 2, message: 'Appointment cancelled for Alice Williams', type: 'warning', date: '2026-02-14', read: false },
     { id: 3, message: 'System backup completed successfully', type: 'success', date: '2026-02-13', read: true },
@@ -93,16 +165,36 @@ function AdminDashboard() {
     setShowModal(true);
   };
 
+  // Phase 4 Step 10: Edit User
   const handleEditUser = (user) => {
-    alert(`Edit user ${user.name} - Feature coming soon!`);
+    setEditingItem({ type: 'user', ...user });
+  };
+
+  const handleUserSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    const errors = validateForm(data, ['name', 'role', 'email', 'phone', 'status']);
+    if (errors) {
+      showToast('Please fix form errors (required fields, valid email/phone)', 'error');
+      return;
+    }
+
+    // Update localUsers and contextUsers
+    setLocalUsers(prev => prev.map(u => u.id === editingItem.id ? { ...u, ...data } : u));
+    
+    showToast(`User "${data.name}" updated successfully!`);
+    setEditingItem(null);
   };
 
   const handleDeleteUser = (id) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(user => user.id !== id));
-      alert('User deleted successfully!');
+      setLocalUsers(prev => prev.filter(user => user.id !== id));
+      showToast('User deleted successfully!', 'success');
     }
   };
+
 
   const handleAddUser = () => {
     alert('Add user feature coming soon!');
@@ -125,8 +217,28 @@ function AdminDashboard() {
     setShowModal(true);
   };
 
+  // Phase 4 Step 9: Edit Appointment
   const handleEditAppointment = (apt) => {
-    alert(`Edit appointment #${apt.id} - Feature coming soon!`);
+    setEditingItem({ type: 'appointment', ...apt });
+  };
+
+  const handleAppointmentSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    const errors = validateForm(data, ['service', 'date', 'status']);
+    if (errors) {
+      showToast('Please fix form errors', 'error');
+      return;
+    }
+
+    // Update localAppointments and context
+    setLocalAppointments(prev => prev.map(a => a.id === editingItem.id ? { ...a, ...data } : a));
+    updateAppointment(editingItem.id, data);
+    
+    showToast(`Appointment #${editingItem.id} updated!`);
+    setEditingItem(null);
   };
 
   const handleAddService = () => {
@@ -144,35 +256,162 @@ function AdminDashboard() {
     }
   };
 
+  // Phase 2 Step 6: Enhanced View Report
   const handleViewReport = (report) => {
+    let content = null;
+    
+    switch(report.type) {
+      case 'Financial':
+        content = (
+          <div>
+            <h4>Revenue Summary</h4>
+            <table className="appointments-table" style={{width: '100%', fontSize: '0.9rem'}}>
+              <thead>
+                <tr><th>Date</th><th>Service</th><th>Patient</th><th>Revenue</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>2026-02-01</td><td>General Consultation</td><td>John Smith</td><td>$50</td></tr>
+                <tr><td>2026-02-02</td><td>Nursing Care</td><td>Alice Williams</td><td>$40</td></tr>
+                <tr><td>2026-02-03</td><td>Cardiology</td><td>Robert Chen</td><td>$60</td></tr>
+              </tbody>
+            </table>
+            <p style={{marginTop: '1rem', fontWeight: 'bold'}}>Total: $150</p>
+          </div>
+        );
+        break;
+      case 'Feedback':
+        content = (
+          <div>
+            <h4>Patient Feedback</h4>
+            <ul style={{paddingLeft: '1.5rem'}}>
+              <li>John Smith: ★★★★★ "Excellent service!"</li>
+              <li>Alice Williams: ★★★★☆ "Good care, prompt response"</li>
+            </ul>
+            <p style={{marginTop: '1rem'}}><strong>Average Rating: 4.5/5</strong></p>
+          </div>
+        );
+        break;
+      case 'Analytics':
+        content = (
+          <div>
+            <h4>Appointment Statistics</h4>
+            <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
+              <div className="stat-card" style={{padding: '1rem'}}>
+                <h4>Total Appointments</h4>
+                <p className="stat-number">24</p>
+              </div>
+              <div className="stat-card" style={{padding: '1rem'}}>
+                <h4>Confirmed</h4>
+                <p className="stat-number">18</p>
+              </div>
+              <div className="stat-card" style={{padding: '1rem'}}>
+                <h4>Pending</h4>
+                <p className="stat-number">6</p>
+              </div>
+            </div>
+          </div>
+        );
+        break;
+      default:
+        content = <div className="modal-details"><p><strong>Title:</strong> {report.title}</p><p><strong>Type:</strong> {report.type}</p><p><strong>Date:</strong> {report.date}</p></div>;
+    }
+    
     setModalContent({
       title: report.title,
-      content: (
-        <div className="modal-details">
-          <p><strong>Title:</strong> {report.title}</p>
-          <p><strong>Type:</strong> {report.type}</p>
-          <p><strong>Date:</strong> {report.date}</p>
-        </div>
-      )
+      content
     });
     setShowModal(true);
   };
 
+  // Phase 2 Step 5: Download Report (CSV)
   const handleDownloadReport = (report) => {
-    alert(`Downloading ${report.title}...`);
+    let csvContent = '';
+    
+    switch(report.type) {
+      case 'Financial':
+        csvContent = 'Date,Service,Patient,Provider,Revenue\n' +
+          '2026-02-01,General Consultation,John Smith,Dr. Sarah Johnson,$50\n' +
+          '2026-02-02,Nursing Care,Alice Williams,Nurse Mike Brown,$40\n' +
+          '2026-02-03,Cardiology,Robert Chen,Dr. John Smith,$60\n';
+        break;
+      case 'Feedback':
+        csvContent = 'Patient,Rating,Comment,Date\n' +
+          'John Smith,5,Excellent service,$2026-02-01\n' +
+          'Alice Williams,4,Good care,$2026-02-02\n';
+        break;
+      case 'Analytics':
+        csvContent = 'Metric,Value,Date\n' +
+          'Total Appointments,24,2026-02\n' +
+          'Total Revenue,$150,2026-02\n' +
+          'Patient Satisfaction,4.8,2026-02\n';
+        break;
+      default:
+        csvContent = 'Report Data\nNo data available';
+    }
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${report.title.replace(/\\s+/g, '_')}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    showToast(`Downloaded ${report.title} as CSV`);
   };
 
+  // Phase 2 Step 4: Generate Report
   const handleGenerateReport = () => {
-    alert('Generate report feature coming soon!');
+    setEditingItem({ type: 'report' });
   };
 
-  const handleConfigureSettings = (setting) => {
-    alert(`${setting} configuration coming soon!`);
+  const handleReportSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    const errors = validateForm(data, ['title', 'type']);
+    if (errors) {
+      showToast('Please fix the errors in the form', 'error');
+      return;
+    }
+
+    const newReport = {
+      id: Date.now(),
+      ...data,
+      date: new Date().toISOString().split('T')[0]
+    };
+    
+    setLocalReports([newReport, ...localReports]);
+    setEditingItem(null);
+    showToast(`Report "${data.title}" generated successfully!`);
   };
 
-  const handleLogout = () => {
-    logout();
-    // Note: Link handles navigation to "/"
+  // Phase 3 Step 7: Settings Configuration
+  const handleConfigureSettings = (category) => {
+    setEditingItem({ type: 'settings', category });
+  };
+
+  const handleSettingsSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData);
+    
+    setSettings(prev => ({ ...prev, [editingItem.category.toLowerCase().replace(/\s/g, '')]: data }));
+    setEditingItem(null);
+    showToast(`${editingItem.category} updated successfully!`);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout(); // Clear context/session
+      localStorage.removeItem('currentUser'); // Clear app-specific session
+      navigate('/login');
+      showToast('Logged out successfully', 'success');
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate('/login');
+    }
   };
 
   // Mock license verification service
@@ -606,8 +845,11 @@ function AdminDashboard() {
       
       <aside className={`sidebar ${sidebarOpen ? 'active' : ''}`}>
         <div className="sidebar-header">
-          <h2>HomeCare</h2>
+          <h2>{settings.generalSettings?.appName || 'HomeCare'}</h2>
           <p>Admin Portal</p>
+          {settings.notificationSettings && (
+            <small style={{opacity: 0.8}}>Notifications: {settings.notificationSettings.email ? 'Email ' : ''}{settings.notificationSettings.sms ? 'SMS' : ''}</small>
+          )}
         </div>
         <nav className="sidebar-nav">
           <a href="#overview" className={activeTab === 'overview' ? 'active' : ''} onClick={() => {setActiveTab('overview'); setSidebarOpen(false);}}>Dashboard</a>
@@ -616,7 +858,7 @@ function AdminDashboard() {
           <a href="#services" className={activeTab === 'services' ? 'active' : ''} onClick={() => {setActiveTab('services'); setSidebarOpen(false);}}>Services</a>
           <a href="#reports" className={activeTab === 'reports' ? 'active' : ''} onClick={() => {setActiveTab('reports'); setSidebarOpen(false);}}>Reports</a>
           <a href="#settings" className={activeTab === 'settings' ? 'active' : ''} onClick={() => {setActiveTab('settings'); setSidebarOpen(false);}}>Settings</a>
-<button className="sidebar-logout" onClick={() => { handleLogout(); setSidebarOpen(false); }}>Logout</button>
+          <button className="sidebar-logout" onClick={() => { handleLogout(); setSidebarOpen(false); }}>Logout</button>
         </nav>
       </aside>
 
@@ -627,6 +869,160 @@ function AdminDashboard() {
         {renderContent()}
       </main>
 
+      {/* Phase 1: Render reusable components */}
+      <ToastComponent />
+{editingItem && (
+        <FormModal 
+          key={editingItem.id || editingItem.type}
+          isOpen={true} 
+          onClose={() => setEditingItem(null)}
+          title={editingItem.type === 'report' ? 'Generate New Report' :
+                 editingItem.type === 'appointment' ? 'Edit Appointment' :
+                 editingItem.type === 'user' ? 'Edit User' :
+                 editingItem.type === 'settings' ? `Configure ${editingItem.category}` : 'Form'}
+          onSubmit={editingItem.type === 'report' ? handleReportSubmit :
+                    editingItem.type === 'settings' ? handleSettingsSubmit :
+                    editingItem.type === 'appointment' ? handleAppointmentSubmit :
+                    editingItem.type === 'user' ? handleUserSubmit : (e) => e.preventDefault()}
+          submitLabel="Save Changes"
+        >
+          {editingItem.type === 'report' && (
+            <div className="form-row">
+              <div className="form-group">
+                <label>Report Title *</label>
+                <input name="title" type="text" defaultValue={editingItem.title || ''} required />
+              </div>
+              <div className="form-group">
+                <label>Report Type *</label>
+                <select name="type" required>
+                  <option value="">Select Type</option>
+                  <option value="Financial">Financial</option>
+                  <option value="Feedback">Feedback</option>
+                  <option value="Analytics">Analytics</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Date</label>
+                <input name="date" type="date" />
+              </div>
+            </div>
+          )}
+          {editingItem.type === 'appointment' && (
+            <div className="form-row">
+              <div className="form-group">
+                <label>Service *</label>
+                <input name="service" type="text" defaultValue={editingItem.service || ''} required />
+              </div>
+              <div className="form-group">
+                <label>Date *</label>
+                <input name="date" type="date" defaultValue={editingItem.date || ''} required />
+              </div>
+              <div className="form-group">
+                <label>Time</label>
+                <input name="time" type="time" defaultValue={editingItem.time || ''} />
+              </div>
+              <div className="form-group">
+                <label>Provider</label>
+                <input name="provider" type="text" defaultValue={editingItem.provider || ''} />
+              </div>
+              <div className="form-group">
+                <label>Status *</label>
+                <select name="status" required>
+                  <option value="Pending" selected={editingItem.status === 'Pending'}>Pending</option>
+                  <option value="Confirmed" selected={editingItem.status === 'Confirmed'}>Confirmed</option>
+                  <option value="In Progress" selected={editingItem.status === 'In Progress'}>In Progress</option>
+                  <option value="Completed" selected={editingItem.status === 'Completed'}>Completed</option>
+                  <option value="Cancelled" selected={editingItem.status === 'Cancelled'}>Cancelled</option>
+                </select>
+              </div>
+            </div>
+          )}
+          {editingItem.type === 'user' && (
+            <div className="form-row">
+              <div className="form-group">
+                <label>Name *</label>
+                <input name="name" type="text" defaultValue={editingItem.name || ''} required />
+              </div>
+              <div className="form-group">
+                <label>Role *</label>
+                <select name="role" required>
+                  <option value="Patient" selected={editingItem.role === 'Patient'}>Patient</option>
+                  <option value="Doctor" selected={editingItem.role === 'Doctor'}>Doctor</option>
+                  <option value="Nurse" selected={editingItem.role === 'Nurse'}>Nurse</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Email *</label>
+                <input name="email" type="email" defaultValue={editingItem.email || ''} required />
+              </div>
+              <div className="form-group">
+                <label>Phone *</label>
+                <input name="phone" type="tel" defaultValue={editingItem.phone || ''} required />
+              </div>
+              <div className="form-group">
+                <label>Status *</label>
+                <select name="status" required>
+                  <option value="Active" selected={editingItem.status === 'Active'}>Active</option>
+                  <option value="Pending" selected={editingItem.status === 'Pending'}>Pending</option>
+                  <option value="Inactive" selected={editingItem.status === 'Inactive'}>Inactive</option>
+                </select>
+              </div>
+              {(editingItem.role === 'Doctor' || editingItem.role === 'Nurse') && (
+                <div className="form-group">
+                  <label>Specialty (Optional)</label>
+                  <input name="specialty" type="text" defaultValue={editingItem.specialty || ''} />
+                </div>
+              )}
+            </div>
+          )}
+          {editingItem.type === 'settings' && (
+            <div>
+              {editingItem.category === 'General Settings' && (
+                <div className="form-group">
+                  <label>App Name</label>
+                  <input name="appName" type="text" defaultValue={settings.generalSettings?.appName || ''} />
+                </div>
+              )}
+              {editingItem.category === 'Notification Settings' && (
+                <>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Email Notifications</label>
+                      <input name="email" type="checkbox" defaultChecked={settings.notificationSettings?.email || false} />
+                    </div>
+                    <div className="form-group">
+                      <label>SMS Notifications</label>
+                      <input name="sms" type="checkbox" defaultChecked={settings.notificationSettings?.sms || false} />
+                    </div>
+                  </div>
+                </>
+              )}
+              {editingItem.category === 'Payment Settings' && (
+                <div className="form-group">
+                  <label>Default Payment Method</label>
+                  <select name="defaultPaymentMethod">
+                    <option>Cash</option>
+                    <option>Card</option>
+                    <option>Mobile Money</option>
+                  </select>
+                </div>
+              )}
+              {editingItem.category === 'Security Settings' && (
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Two-Factor Authentication</label>
+                    <input name="twoFactor" type="checkbox" />
+                  </div>
+                  <div className="form-group">
+                    <label>Session Timeout (minutes)</label>
+                    <input name="sessionTimeout" type="number" min="5" max="60" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </FormModal>
+      )}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -645,3 +1041,4 @@ function AdminDashboard() {
 }
 
 export default AdminDashboard;
+

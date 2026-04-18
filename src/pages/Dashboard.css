@@ -1153,6 +1153,107 @@ section h2 {
   color: #666;
 }
 
+/* Phase 1 Step 12: Toast & Form Styles */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 3000;
+  min-width: 300px;
+  animation: slideInRight 0.3s ease;
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #dc3545, #fd7e14);
+}
+
+.toast-info {
+  background: linear-gradient(135deg, #17a2b8, #6f42c1);
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group small.error {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .toast-container {
+    min-width: 90vw;
+    left: 5vw;
+    right: 5vw;
+    top: 10px;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content {
+    margin: 1rem;
+    width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+  }
+}
+
 /* Video Call Button Styles */
 .btn-video-call {
   padding: 0.5rem 1rem;
