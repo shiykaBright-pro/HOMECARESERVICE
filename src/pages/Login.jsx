@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../supabaseClient';
 import Navbar from '../components/Navbar';
 import './Login.css';
 import './Dashboard.css';
@@ -50,16 +51,31 @@ function Login() {
       return;
     }
 
-    const result = login(formData.email, formData.password, formData.license, formData.specialty, formData.name);
-    
-    if (result.success) {
-      // Redirect based on user role
-      const route = `/dashboard/${result.user.role}`;
-      navigate(route);
-    } else {
-      setError(result.error);
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (authError) {
+        setError(authError.message || 'Login failed');
+        setLoading(false);
+        return;
+      }
+
+      // If Supabase auth succeeds, also set the app's current user from local state
+      const result = login(formData.email, formData.password, formData.license, formData.specialty, formData.name);
+      if (result.success) {
+        const route = `/dashboard/${result.user.role}`;
+        navigate(route);
+      } else {
+        setError(result.error || 'Unable to find local user after auth');
+      }
+    } catch (err) {
+      setError(err?.message || 'An error occurred during login');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
