@@ -6,7 +6,10 @@ import Services from './pages/Services';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 
+
 import PatientDashboard from './pages/PatientDashboard';
+import AuthCallback from './pages/AuthCallback';
+
 import DoctorDashboard from './pages/DoctorDashboard';
 import NurseDashboard from './pages/NurseDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -28,7 +31,10 @@ function App() {
           <Route path="/services" element={<Services />} />
           <Route path="/contact" element={<Contact />} />
 
-<Route path="/login" element={<Login />} />
+
+          <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+
 
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
           <Route path="/dashboard/patient/payment" element={<Payment />} />

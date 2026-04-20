@@ -5,7 +5,7 @@ import './Dashboard.css';
 
 function DoctorDashboard() {
   const navigate = useNavigate();
-  const { currentUser, users, appointments, medicalRecords, prescriptions, notifications, messages, sendMessage, getConversation, updateAppointment, addPrescription, deletePrescription, addMedicalRecord, logout } = useApp();
+  const { currentUser, users, appointments, medicalRecords, prescriptions, notifications, messages, sendMessage, getConversation, updateAppointment, addPrescription, addMedicalRecord, logout } = useApp();
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -17,17 +17,15 @@ function DoctorDashboard() {
   const [chatMessage, setChatMessage] = useState('');
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({});
-
-  const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
-  
-  // Doctor's prescriptions - filter from context
-  const doctorPrescriptions = (prescriptions || []).filter(p => p.doctorId === currentUser?.id);
   
   // Prescription form state - single med for prescriptions tab
   const [prescriptionForm, setPrescriptionForm] = useState({
     medications: [{ name: '', dosage: '', frequency: '', duration: '' }],
     notes: ''
   });
+  
+  // Doctor's prescriptions - filter from context
+  const doctorPrescriptions = (prescriptions || []).filter(p => p.doctorId === currentUser?.id);
 
   
   // Medical record form state
@@ -39,15 +37,15 @@ function DoctorDashboard() {
   });
 
   // Get appointments for this doctor
-  const doctorAppointments = (appointments || []).filter(apt => apt.providerId === currentUser?.id);
+  const doctorAppointments = appointments.filter(apt => apt.providerId === currentUser?.id);
   
   // Get patients who have appointments with this doctor
   const patientIds = [...new Set(doctorAppointments.map(apt => apt.patientId))];
-  const patients = (users || []).filter(u => patientIds.includes(u.id) && u.role === 'patient');
+  const patients = users.filter(u => patientIds.includes(u.id) && u.role === 'patient');
   
   // Get doctor's appointments patients
   const doctorPatients = doctorAppointments.map(apt => ({
-    ...((users || []).find(u => u.id === apt.patientId) || {}),
+    ...users.find(u => u.id === apt.patientId),
     lastAppointment: apt.date,
     lastService: apt.service,
     appointmentId: apt.id
@@ -57,26 +55,13 @@ function DoctorDashboard() {
   const uniquePatients = [...new Map(doctorPatients.map(p => [p.id, p])).values()];
   
   // Get user's notifications
-  const userNotifications = (notifications || []).filter(notif => notif.userId === currentUser?.id);
+  const userNotifications = notifications.filter(notif => notif.userId === currentUser?.id);
 
   // Get messages for this doctor
-  const doctorMessages = (messages || []).filter(m => m.fromId === currentUser?.id || m.toId === currentUser?.id);
+  const doctorMessages = messages.filter(m => m.fromId === currentUser?.id || m.toId === currentUser?.id);
   
   // Show ALL patients for messaging
-  const patientsWithMessages = (users || []).filter(u => u.role === 'patient');
-
-  const getPatientName = (patientId) => {
-    return (users || []).find(u => u.id === patientId)?.name || 'Unknown';
-  };
-
-  const filteredDoctorPrescriptions = (doctorPrescriptions || []).filter(pres => {
-    const query = searchQuery.toLowerCase();
-    const medicationNames = (pres.medications || []).map(m => m.name || '').join(' ').toLowerCase();
-    return !searchQuery ||
-      getPatientName(pres.patientId).toLowerCase().includes(query) ||
-      medicationNames.includes(query) ||
-      (pres.date || '').toLowerCase().includes(query);
-  });
+  const patientsWithMessages = users.filter(u => u.role === 'patient');
 
   useEffect(() => {
     if (!currentUser) {
@@ -118,32 +103,6 @@ function DoctorDashboard() {
       )
     });
     setShowModal(true);
-  };
-
-  const handleViewPrescription = (prescription) => {
-    setModalContent({
-      title: 'Prescription Details',
-      content: (
-        <div className="modal-details">
-          <p><strong>Patient:</strong> {getPatientName(prescription.patientId)}</p>
-          <p><strong>Date:</strong> {prescription.date}</p>
-          <p><strong>Medications:</strong></p>
-          <ul>
-            {(prescription.medications || []).map((med, index) => (
-              <li key={index}>{`${med.name} ${med.dosage} ${med.frequency} ${med.duration}`}</li>
-            ))}
-          </ul>
-          <p><strong>Notes:</strong> {prescription.notes || 'None'}</p>
-        </div>
-      )
-    });
-    setShowModal(true);
-  };
-
-  const handleDeletePrescription = (id) => {
-    if (!window.confirm('Delete this prescription?')) return;
-    deletePrescription(id);
-    alert('Prescription deleted!');
   };
 
   const handleStartConsultation = (apt) => {
@@ -539,7 +498,6 @@ function DoctorDashboard() {
   }
 
   const renderContent = () => {
-    console.log("renderContent called", { activeTab, showChat, selectedPatient, currentUser });
     if (showChat && selectedPatient) {
       const conversation = getConversation(currentUser.id, selectedPatient.id);
       
@@ -952,7 +910,12 @@ function DoctorDashboard() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-
+              <button className="btn-primary" onClick={() => {
+                setSelectedPatient(uniquePatients[0] || null);
+                setPrescriptionForm({ medication: '', dosage: '', frequency: '', duration: '', notes: '' });
+              }}>
+                + New Prescription
+              </button>
                 <button className="btn-primary" onClick={() => {
                   setSelectedPatient(uniquePatients[0] || null);
                   setPrescriptionForm({ medications: [{ name: '', dosage: '', frequency: '', duration: '' }], notes: '' });
@@ -971,7 +934,7 @@ function DoctorDashboard() {
 
                 <form onSubmit={(e) => {
                   e.preventDefault();
-                  if (!prescriptionForm.medications[0].name.trim()) {
+                  if (!prescriptionForm.medication.trim()) {
                     alert('Medication name is required');
                     return;
                   }
@@ -979,12 +942,15 @@ function DoctorDashboard() {
                     patientId: selectedPatient.id,
                     doctorId: currentUser.id,
                     doctorName: currentUser.name,
-                    medications: prescriptionForm.medications.filter(m => m.name.trim() !== ''),
+                    medication: prescriptionForm.medication,
+                    dosage: prescriptionForm.dosage,
+                    frequency: prescriptionForm.frequency,
+                    duration: prescriptionForm.duration,
                     notes: prescriptionForm.notes
                   });
                   alert('Prescription created!');
                   setSelectedPatient(null);
-                  setPrescriptionForm({ medications: [{ name: '', dosage: '', frequency: '', duration: '' }], notes: '' });
+                  setPrescriptionForm({ medication: '', dosage: '', frequency: '', duration: '', notes: '' });
                 }}>
                   <div className="form-row">
                     <div className="form-group">
@@ -1004,12 +970,8 @@ function DoctorDashboard() {
                       <label>Medication</label>
                       <input 
                         type="text" 
-                        value={prescriptionForm.medications[0].name}
-                        onChange={(e) => {
-                          const newMeds = [...prescriptionForm.medications];
-                          newMeds[0].name = e.target.value;
-                          setPrescriptionForm({...prescriptionForm, medications: newMeds});
-                        }}
+                        value={prescriptionForm.medication}
+                        onChange={(e) => setPrescriptionForm({...prescriptionForm, medication: e.target.value})}
                         placeholder="e.g., Paracetamol"
                         required
                       />
@@ -1020,12 +982,8 @@ function DoctorDashboard() {
                       <label>Dosage</label>
                       <input 
                         type="text" 
-                        value={prescriptionForm.medications[0].dosage}
-                        onChange={(e) => {
-                          const newMeds = [...prescriptionForm.medications];
-                          newMeds[0].dosage = e.target.value;
-                          setPrescriptionForm({...prescriptionForm, medications: newMeds});
-                        }}
+                        value={prescriptionForm.dosage}
+                        onChange={(e) => setPrescriptionForm({...prescriptionForm, dosage: e.target.value})}
                         placeholder="e.g., 500mg"
                         required
                       />
@@ -1034,12 +992,8 @@ function DoctorDashboard() {
                       <label>Frequency</label>
                       <input 
                         type="text" 
-                        value={prescriptionForm.medications[0].frequency}
-                        onChange={(e) => {
-                          const newMeds = [...prescriptionForm.medications];
-                          newMeds[0].frequency = e.target.value;
-                          setPrescriptionForm({...prescriptionForm, medications: newMeds});
-                        }}
+                        value={prescriptionForm.frequency}
+                        onChange={(e) => setPrescriptionForm({...prescriptionForm, frequency: e.target.value})}
                         placeholder="e.g., twice daily"
                         required
                       />
@@ -1050,12 +1004,8 @@ function DoctorDashboard() {
                       <label>Duration</label>
                       <input 
                         type="text" 
-                        value={prescriptionForm.medications[0].duration}
-                        onChange={(e) => {
-                          const newMeds = [...prescriptionForm.medications];
-                          newMeds[0].duration = e.target.value;
-                          setPrescriptionForm({...prescriptionForm, medications: newMeds});
-                        }}
+                        value={prescriptionForm.duration}
+                        onChange={(e) => setPrescriptionForm({...prescriptionForm, duration: e.target.value})}
                         placeholder="e.g., 5 days"
                         required
                       />
@@ -1093,8 +1043,8 @@ function DoctorDashboard() {
                   {filteredDoctorPrescriptions.map(pres => (
                     <tr key={pres.id}>
                       <td>{getPatientName(pres.patientId)}</td>
-                      <td>{(pres.medications || []).map(m => m.name).join(', ') || pres.medication || '-'}</td>
-                      <td>{(pres.medications || [])[0]?.dosage || pres.dosage || '-'}</td>
+                      <td>{pres.medication}</td>
+                      <td>{pres.dosage}</td>
                       <td>{pres.date}</td>
                       <td>
                         <button className="btn-view" onClick={() => handleViewPrescription(pres)}>View</button>
@@ -1141,7 +1091,7 @@ function DoctorDashboard() {
       <main className="dashboard-content">
 
         <header className="dashboard-header">
-          <h1>Welcome, {currentUser?.name || 'Doctor'}!</h1>
+          <h1>Welcome, {currentUser?.displayName || currentUser?.name || 'Doctor'}!</h1>
         </header>
 
         {renderContent()}
