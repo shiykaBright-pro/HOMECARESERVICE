@@ -8,7 +8,7 @@ import './Dashboard.css';
 
 function Login() {
   const navigate = useNavigate();
-  const { users, setCurrentUser } = useApp();
+  const { users, setCurrentUser, currentUser } = useApp();
 
   const rolePaths = {
     doctor: '/doctorsdashboard',
