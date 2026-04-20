@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { supabase } from '../supabaseClient';
@@ -8,7 +8,7 @@ import './Dashboard.css';
 
 function Login() {
   const navigate = useNavigate();
-  const { login } = useApp();
+  const { login, setCurrentUser } = useApp();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -20,6 +20,33 @@ function Login() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Handle OAuth callback
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (data.session && !error) {
+        // Create a patient user object for Google OAuth users
+        const googleUser = {
+          id: Date.now(), // Temporary ID for Google users
+          name: data.session.user.user_metadata?.full_name || data.session.user.email || 'Google User',
+          email: data.session.user.email,
+          role: 'patient',
+          status: 'active',
+          joinDate: new Date().toISOString().split('T')[0]
+        };
+        
+        // Set current user in app context
+        setCurrentUser(googleUser);
+        
+        // Redirect to patient dashboard
+        navigate('/dashboard/patient');
+      }
+    };
+
+    handleAuthCallback();
+  }, [navigate, setCurrentUser]);
 
   const handleChange = (e) => {
     setFormData({
@@ -75,6 +102,25 @@ function Login() {
       setError(err?.message || 'An error occurred during login');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setError('');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin
+        }
+      });
+
+      if (error) {
+        setError(error.message || 'Google login failed');
+      }
+      // OAuth will redirect, so no need to handle success here
+    } catch (err) {
+      setError(err?.message || 'An error occurred during Google login');
     }
   };
 
@@ -164,7 +210,7 @@ function Login() {
           
           <div className="social-login">
             <p>or continue with</p>
-            <button type="button" className="btn-google-login" onClick={() => alert('Google login - coming soon!')}>
+            <button type="button" className="btn-google-login" onClick={handleGoogleLogin}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26.71-.66 1.32-1.13 1.85v2.74h1.83c1.08-.98 1.7-2.42 1.7-4.1z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-1.83-1.42c-.98.66-2.23.99-3.78.99-2.92 0-5.4-1.98-6.28-4.66H4.08v1.44c0 3.73 3.39 6.64 6.92 6.64z" fill="#34A853"/>
