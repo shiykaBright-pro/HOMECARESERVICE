@@ -8,6 +8,10 @@ const initialUsers = [
   { id: 3, name: 'Nurse Mike Brown', email: 'mike@example.com', phone: '+237 670000002', role: 'nurse', licenseNumber: 'RN-67890', password: 'password123', status: 'active', joinDate: '2023-08-20', experience: '7 years', specialization: 'Home Nursing, Wound Care', rating: 4.9, totalRatings: 32 },
   { id: 4, name: 'Admin User', email: 'admin@example.com', phone: '+237 670000003', role: 'admin', password: 'admin123', status: 'active', joinDate: '2023-01-01' },
   { id: 5, name: 'Dr. John Smith', email: 'john.smith@example.com', phone: '+237 670000004', role: 'doctor', specialty: 'Cardiology', licenseNumber: 'MD-54321', password: 'password123', status: 'active', joinDate: '2023-05-15', experience: '15 years', hospital: 'Heart Center Hospital', rating: 4.9, totalRatings: 78 },
+  // Test Credentials (for development/testing purposes)
+  { id: 6, name: 'Test Doctor', email: 'doctor@test.com', phone: '+237 600000001', role: 'doctor', specialty: 'General Medicine', licenseNumber: 'TEST-MD-001', password: 'doctor123', status: 'active', joinDate: '2026-01-01', experience: '5 years', hospital: 'Test Hospital', rating: 4.5, totalRatings: 10 },
+  { id: 7, name: 'Test Nurse', email: 'nurse@test.com', phone: '+237 600000002', role: 'nurse', licenseNumber: 'TEST-RN-001', password: 'nurse123', status: 'active', joinDate: '2026-01-01', experience: '5 years', specialization: 'General Nursing', rating: 4.5, totalRatings: 10 },
+  { id: 8, name: 'Test Admin', email: 'admin@test.com', phone: '+237 600000003', role: 'admin', password: 'admin123', status: 'active', joinDate: '2026-01-01' },
 ];
 
 const initialAppointments = [
@@ -47,10 +51,28 @@ const initialVideoCalls = [
   { id: 1, callerId: 2, callerName: 'Dr. Sarah Johnson', receiverId: 1, receiverName: 'John Doe', status: 'completed', startTime: '2026-01-15 10:00 AM', endTime: '2026-01-15 10:15 AM' },
 ];
 
+import { supabase } from '../supabaseClient';
+
 export function AppProvider({ children }) {
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('users');
-    return saved ? JSON.parse(saved) : initialUsers;
+    let parsedUsers = saved ? JSON.parse(saved) : initialUsers;
+    
+    // Ensure test users are always present
+    const testUserIds = [6, 7, 8];
+    const testUsersInInitial = initialUsers.filter(u => testUserIds.includes(u.id));
+    
+    // Check if test users exist in saved data
+    const hasAllTestUsers = testUserIds.every(id => parsedUsers.find(u => u.id === id));
+    
+    if (!hasAllTestUsers) {
+      // Merge test users with existing users
+      const mergedUsers = [...parsedUsers.filter(u => !testUserIds.includes(u.id)), ...testUsersInInitial];
+      localStorage.setItem('users', JSON.stringify(mergedUsers));
+      return mergedUsers;
+    }
+    
+    return parsedUsers;
   });
 
   const [currentUser, setCurrentUser] = useState(() => {
@@ -180,6 +202,26 @@ export function AppProvider({ children }) {
     );
   };
 
+  // Supabase auth state listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        const localUser = users.find(u => u.email === session.user.email);
+        const enhancedUser = {
+          ...session.user,
+          role: localUser ? localUser.role : 'patient'
+        };
+        setCurrentUser(enhancedUser);
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [users]);
+
   // Save to localStorage whenever data changes
   useEffect(() => {
     localStorage.setItem('users', JSON.stringify(users));
@@ -214,37 +256,35 @@ export function AppProvider({ children }) {
   }, [reviews]);
 
   // Auth functions
-  const login = (email, password, license, specialty) => {
-    // Test credentials
-    if (email === 'doctor@test.com' && password === 'doctor123' && license === '' && specialty === '') {
-      const doctor = users.find(u => u.role === 'doctor');
-      if (doctor) {
-        setCurrentUser(doctor);
-        return { success: true, user: doctor };
+const login = async (email, password) => {
+    try {
+      // First try Supabase auth
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) throw error;
+      
+      // Map role from local users array by email (for test/real users compatibility)
+      const localUser = users.find(u => u.email === email);
+      const role = localUser ? localUser.role : 'patient'; // default fallback
+      
+      // Enhance Supabase user with role and local data
+      const enhancedUser = {
+        ...data.user,
+        role,
+        ...localUser // merge local profile data
+      };
+      
+      setCurrentUser(enhancedUser);
+      return { success: true, user: enhancedUser };
+    } catch (error) {
+      // Fallback to local mock auth for test users during transition
+      const localUser = users.find(u => u.email === email && u.password === password);
+      if (localUser) {
+        setCurrentUser(localUser);
+        return { success: true, user: localUser };
       }
+      return { success: false, error: error.message || 'Invalid email or password' };
     }
-    if (email === 'nurse@test.com' && password === 'nurse123' && license === '' && specialty === '') {
-      const nurse = users.find(u => u.role === 'nurse');
-      if (nurse) {
-        setCurrentUser(nurse);
-        return { success: true, user: nurse };
-      }
-    }
-    if (email === 'admin@test.com' && password === 'admin123' && license === '' && specialty === '') {
-      const admin = users.find(u => u.role === 'admin');
-      if (admin) {
-        setCurrentUser(admin);
-        return { success: true, user: admin };
-      }
-    }
-    
-    // Regular login
-    const user = users.find(u => u.email === email && u.password === password);
-    if (user) {
-      setCurrentUser(user);
-      return { success: true, user };
-    }
-    return { success: false, error: 'Invalid email or password' };
   };
 
   const logout = () => {
@@ -305,6 +345,10 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     setNotifications([patientNotification, ...notifications]);
     
     return newPrescription;
+  };
+
+  const deletePrescription = (id) => {
+    setPrescriptions((prev) => (prev || []).filter(p => p.id !== id));
   };
 
   // Notification functions
@@ -423,6 +467,7 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     // Prescriptions
     prescriptions,
     addPrescription,
+    deletePrescription,
     
     // Notifications
     notifications,

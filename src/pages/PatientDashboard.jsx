@@ -43,18 +43,6 @@ const [profileForm, setProfileForm] = useState({});
   const doctors = users.filter(u => u.role === 'doctor');
 
   useEffect(() => {
-    // Protect route - redirect if not authenticated
-    if (!currentUser) {
-      navigate('/login');
-      return;
-    }
-    
-    // Redirect non-patient users
-    if (currentUser.role !== 'patient') {
-      navigate(`/dashboard/${currentUser.role}`);
-      return;
-    }
-    
     setProfileForm({
       name: currentUser.name || '',
       email: currentUser.email || '',
@@ -67,7 +55,7 @@ const [profileForm, setProfileForm] = useState({});
       emergencyPhone: currentUser.emergencyContact?.phone || '',
       emergencyRelation: currentUser.emergencyContact?.relation || ''
     });
-  }, [currentUser, navigate]);
+  }, [currentUser]);
 
   // const [bookingForm, setBookingForm] = useState({
   //   service: '',
