@@ -75,10 +75,7 @@ export function AppProvider({ children }) {
     return parsedUsers;
   });
 
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('currentUser');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [appointments, setAppointments] = useState(() => {
     const saved = localStorage.getItem('appointments');
@@ -289,6 +286,7 @@ const login = async (email, password) => {
 
   const logout = () => {
     setCurrentUser(null);
+    localStorage.removeItem('currentUser');
   };
 
   // Appointment functions

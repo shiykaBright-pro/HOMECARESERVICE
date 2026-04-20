@@ -29,12 +29,34 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Since we're using hardcoded credentials, no need for auth state change listener
     // If user is already logged in, redirect to their dashboard
     if (currentUser) {
       navigate(rolePaths[currentUser.role]);
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, rolePaths]);
+
+  // Listen for OAuth callback from Supabase
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        const googleUser = session.user;
+        // For Google OAuth, create a patient user profile
+        const patientUser = {
+          id: googleUser.id,
+          name: googleUser.user_metadata?.full_name || googleUser.email,
+          email: googleUser.email,
+          phone: '',
+          role: 'patient',
+          status: 'active',
+          joinDate: new Date().toISOString().split('T')[0]
+        };
+        setCurrentUser(patientUser);
+        navigate('/patientsdashboard');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setCurrentUser, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -48,15 +70,23 @@ function Login() {
     setLoading(true);
     setError('');
     
-    // Simulate Google OAuth - for demo purposes, use the first patient user
-    const googleUser = users.find(u => u.role === 'patient') || users[0];
-    if (googleUser) {
-      setCurrentUser(googleUser);
-      navigate(rolePaths[googleUser.role]);
-    } else {
-      setError('Google login simulation failed');
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/patientsdashboard`
+        }
+      });
+
+      if (error) {
+        setError(error.message || 'Google login failed');
+        setLoading(false);
+      }
+      // On success, Supabase handles the redirect automatically
+    } catch (err) {
+      setError('An error occurred during Google login');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleSubmit = async (e) => {
