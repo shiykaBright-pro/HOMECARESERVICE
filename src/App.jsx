@@ -30,6 +30,11 @@ function App() {
 
 <Route path="/login" element={<Login />} />
 
+                    <Route path="/patientsdashboard" element={<PatientDashboard />} />
+          <Route path="/patientsdashboard/payment" element={<Payment />} />
+          <Route path="/doctorsdashboard" element={<ErrorBoundary><DoctorDashboard /></ErrorBoundary>} />
+          <Route path="/nursedashboard" element={<NurseDashboard />} />
+          <Route path="/adminsdashboard" element={<AdminDashboard />} />
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
           <Route path="/dashboard/patient/payment" element={<Payment />} />
           <Route path="/dashboard/doctor" element={<ErrorBoundary><DoctorDashboard /></ErrorBoundary>} />

@@ -10,6 +10,13 @@ function Login() {
   const navigate = useNavigate();
   const { users, setCurrentUser } = useApp();
 
+  const rolePaths = {
+    doctor: '/doctorsdashboard',
+    nurse: '/nursedashboard',
+    admin: '/adminsdashboard',
+    patient: '/patientsdashboard'
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,18 +29,12 @@ function Login() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        const user = session.user;
-        const localUser = users.find(u => u.email === user.email);
-        const role = localUser ? localUser.role : 'patient';
-        setCurrentUser({ ...user, role, ...localUser });
-        navigate(`/dashboard/${role}`);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [users, setCurrentUser, navigate]);
+    // Since we're using hardcoded credentials, no need for auth state change listener
+    // If user is already logged in, redirect to their dashboard
+    if (currentUser) {
+      navigate(rolePaths[currentUser.role]);
+    }
+  }, [currentUser, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -46,13 +47,16 @@ function Login() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google'
-    });
-    if (error) {
-      setError(error.message);
-      setLoading(false);
+    
+    // Simulate Google OAuth - for demo purposes, use the first patient user
+    const googleUser = users.find(u => u.role === 'patient') || users[0];
+    if (googleUser) {
+      setCurrentUser(googleUser);
+      navigate(rolePaths[googleUser.role]);
+    } else {
+      setError('Google login simulation failed');
     }
+    setLoading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -66,27 +70,17 @@ function Login() {
       return;
     }
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
-      });
-
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
-
-      const user = data.user;
-      const localUser = users.find(u => u.email === formData.email);
-      const role = localUser ? localUser.role : 'patient';
-
-      setCurrentUser({ ...user, role, ...localUser });
-      navigate(`/dashboard/${role}`);
-    } catch (err) {
-      setError('An unexpected error occurred');
+    // Hardcoded credentials validation
+    const user = users.find(u => u.email === formData.email && u.password === formData.password);
+    if (!user) {
+      setError('Invalid email or password');
+      setLoading(false);
+      return;
     }
+
+    // Set current user and navigate based on role
+    setCurrentUser(user);
+    navigate(rolePaths[user.role]);
     setLoading(false);
   };
 
