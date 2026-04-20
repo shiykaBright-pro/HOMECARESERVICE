@@ -18,10 +18,13 @@ function DoctorDashboard() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({});
   
-  // Prescription form state
-  const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
+  // Prescription form state - single med for prescriptions tab
   const [prescriptionForm, setPrescriptionForm] = useState({
-    medications: [{ name: '', dosage: '', frequency: '', duration: '' }],
+    patientId: '',
+    medication: '',
+    dosage: '',
+    frequency: '',
+    duration: '',
     notes: ''
   });
   
@@ -327,9 +330,17 @@ function DoctorDashboard() {
     setShowChat(true);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      localStorage.removeItem('currentUser');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      localStorage.removeItem('currentUser');
+      navigate('/login');
+    }
   };
 
   // Filter functions
@@ -879,6 +890,160 @@ function DoctorDashboard() {
           </div>
         );
 
+      case 'prescriptions':
+        return (
+          <section>
+            <h2>My Prescriptions</h2>
+            <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem'}}>
+              <div className="search-filter">
+                <input 
+                  type="text" 
+                  className="search-input" 
+                  placeholder="Search prescriptions..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <button className="btn-primary" onClick={() => {
+                setSelectedPatient(uniquePatients[0] || null);
+                setPrescriptionForm({ medication: '', dosage: '', frequency: '', duration: '', notes: '' });
+              }}>
+                + New Prescription
+              </button>
+            </div>
+            
+            {/* Prescription Form */}
+            {selectedPatient && (
+              <div className="form-section">
+                <h3>Create New Prescription for {selectedPatient.name}</h3>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!prescriptionForm.medication.trim()) {
+                    alert('Medication name is required');
+                    return;
+                  }
+                  addPrescription({
+                    patientId: selectedPatient.id,
+                    doctorId: currentUser.id,
+                    doctorName: currentUser.name,
+                    medication: prescriptionForm.medication,
+                    dosage: prescriptionForm.dosage,
+                    frequency: prescriptionForm.frequency,
+                    duration: prescriptionForm.duration,
+                    notes: prescriptionForm.notes
+                  });
+                  alert('Prescription created!');
+                  setSelectedPatient(null);
+                  setPrescriptionForm({ medication: '', dosage: '', frequency: '', duration: '', notes: '' });
+                }}>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Patient</label>
+                      <select 
+                        value={selectedPatient?.id || ''} 
+                        onChange={(e) => setSelectedPatient(uniquePatients.find(p => p.id == e.target.value))}
+                        required
+                      >
+                        <option value="">Select Patient</option>
+                        {uniquePatients.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Medication</label>
+                      <input 
+                        type="text" 
+                        value={prescriptionForm.medication}
+                        onChange={(e) => setPrescriptionForm({...prescriptionForm, medication: e.target.value})}
+                        placeholder="e.g., Paracetamol"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Dosage</label>
+                      <input 
+                        type="text" 
+                        value={prescriptionForm.dosage}
+                        onChange={(e) => setPrescriptionForm({...prescriptionForm, dosage: e.target.value})}
+                        placeholder="e.g., 500mg"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Frequency</label>
+                      <input 
+                        type="text" 
+                        value={prescriptionForm.frequency}
+                        onChange={(e) => setPrescriptionForm({...prescriptionForm, frequency: e.target.value})}
+                        placeholder="e.g., twice daily"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Duration</label>
+                      <input 
+                        type="text" 
+                        value={prescriptionForm.duration}
+                        onChange={(e) => setPrescriptionForm({...prescriptionForm, duration: e.target.value})}
+                        placeholder="e.g., 5 days"
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>Notes</label>
+                      <textarea 
+                        value={prescriptionForm.notes}
+                        onChange={(e) => setPrescriptionForm({...prescriptionForm, notes: e.target.value})}
+                        placeholder="Additional instructions (optional)"
+                        rows="2"
+                      />
+                    </div>
+                  </div>
+                  <button type="submit" className="btn-submit">Create Prescription</button>
+                  <button type="button" className="btn-cancel" onClick={() => setSelectedPatient(null)}>Cancel</button>
+                </form>
+              </div>
+            )}
+
+            {/* Prescriptions List */}
+            <h3>Prescription History ({doctorPrescriptions.length})</h3>
+            {doctorPrescriptions.length > 0 ? (
+              <table className="appointments-table">
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Medication</th>
+                    <th>Dosage</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredDoctorPrescriptions.map(pres => (
+                    <tr key={pres.id}>
+                      <td>{getPatientName(pres.patientId)}</td>
+                      <td>{pres.medication}</td>
+                      <td>{pres.dosage}</td>
+                      <td>{pres.date}</td>
+                      <td>
+                        <button className="btn-view" onClick={() => handleViewPrescription(pres)}>View</button>
+                        <button className="btn-delete" onClick={() => handleDeletePrescription(pres.id)}>Delete</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="no-data">No prescriptions created yet</p>
+            )}
+          </section>
+        );
+
       default:
         return null;
     }
@@ -902,6 +1067,7 @@ function DoctorDashboard() {
           <a href="#messages" className={activeTab === 'messages' ? 'active' : ''} onClick={() => {setActiveTab('messages'); setSidebarOpen(false);}}>Messages</a>
           <a href="#schedule" className={activeTab === 'schedule' ? 'active' : ''} onClick={() => {setActiveTab('schedule'); setSidebarOpen(false);}}>My Schedule</a>
           <a href="#profile" className={activeTab === 'profile' ? 'active' : ''} onClick={() => {setActiveTab('profile'); setSidebarOpen(false);}}>My Profile</a>
+          <a href="#prescriptions" className={activeTab === 'prescriptions' ? 'active' : ''} onClick={() => {setActiveTab('prescriptions'); setSidebarOpen(false);}}>💊 Prescriptions</a>
 <button className="sidebar-logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</button>
         </nav>
       </aside>

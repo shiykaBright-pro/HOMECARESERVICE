@@ -208,9 +208,15 @@ function NurseDashboard() {
     setShowChat(true);
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      localStorage.removeItem('currentUser');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate('/login');
+    }
   };
 
   // Filter functions

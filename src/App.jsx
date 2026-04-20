@@ -15,6 +15,7 @@ import Reviews from './pages/Reviews';
 import VideoCall from './components/VideoCall';
 import Payment from './pages/Payment';
 import BookAppointment from './pages/BookAppointment';
+import Emergency from './pages/Emergency'; 
 
 function App() {
   return (
@@ -37,7 +38,8 @@ function App() {
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/video-call/:id" element={<VideoCall />} />
           <Route path="/book-appointment" element={<BookAppointment />} />
-        </Routes>
+          <Route path="/emergency" element={<Emergency />} />
+        </Routes> 
 
       </Router>
     </AppProvider>

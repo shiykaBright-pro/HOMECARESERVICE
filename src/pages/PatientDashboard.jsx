@@ -18,7 +18,14 @@ function PatientDashboard() {
   const [recordFilter, setRecordFilter] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('');
   const [editingProfile, setEditingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState({});
+const [profileForm, setProfileForm] = useState({});
+  const [toast, setToast] = useState({ message: '', type: '', visible: false });
+
+  // Toast function
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type, visible: true });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 4000);
+  };
 
   // Get user's appointments
   const userAppointments = appointments.filter(apt => apt.patientId === currentUser?.id);
@@ -116,7 +123,7 @@ function PatientDashboard() {
     setShowModal(true);
   };
 
-  const handleViewPrescription = (prescription) => {
+const handleViewPrescription = (prescription) => {
     setModalContent({
       title: 'Prescription Details',
       content: (
@@ -140,17 +147,18 @@ function PatientDashboard() {
     setShowModal(true);
   };
 
-const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
-      await logout(); // Clear context/session
+      await logout();
       localStorage.removeItem('currentUser'); // Clear app-specific session
       navigate('/login');
+      showToast('Logged out successfully', 'success');
     } catch (error) {
       console.error('Logout error:', error);
+      localStorage.removeItem('currentUser');
       navigate('/login');
     }
   };
-
 
   // Filter functions
   const filteredAppointments = userAppointments.filter(apt => {
@@ -602,6 +610,13 @@ const handleLogout = async () => {
         {renderContent()}
       </main>
 
+      {/* Toast Component */}
+      {toast.visible && (
+        <div className={`toast-container toast-${toast.type}`}>
+          {toast.message}
+        </div>
+      )}
+      
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
