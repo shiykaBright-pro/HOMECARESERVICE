@@ -1139,9 +1139,11 @@ function DoctorDashboard() {
       </aside>
 
       <main className="dashboard-content">
+
         <header className="dashboard-header">
           <h1>Welcome, {currentUser?.name || 'Doctor'}!</h1>
         </header>
+
         {renderContent()}
       </main>
 

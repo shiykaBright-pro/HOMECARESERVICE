@@ -8,6 +8,10 @@ const initialUsers = [
   { id: 3, name: 'Nurse Mike Brown', email: 'mike@example.com', phone: '+237 670000002', role: 'nurse', licenseNumber: 'RN-67890', password: 'password123', status: 'active', joinDate: '2023-08-20', experience: '7 years', specialization: 'Home Nursing, Wound Care', rating: 4.9, totalRatings: 32 },
   { id: 4, name: 'Admin User', email: 'admin@example.com', phone: '+237 670000003', role: 'admin', password: 'admin123', status: 'active', joinDate: '2023-01-01' },
   { id: 5, name: 'Dr. John Smith', email: 'john.smith@example.com', phone: '+237 670000004', role: 'doctor', specialty: 'Cardiology', licenseNumber: 'MD-54321', password: 'password123', status: 'active', joinDate: '2023-05-15', experience: '15 years', hospital: 'Heart Center Hospital', rating: 4.9, totalRatings: 78 },
+  // Test Credentials (for development/testing purposes)
+  { id: 6, name: 'Test Doctor', email: 'doctor@test.com', phone: '+237 600000001', role: 'doctor', specialty: 'General Medicine', licenseNumber: 'TEST-MD-001', password: 'doctor123', status: 'active', joinDate: '2026-01-01', experience: '5 years', hospital: 'Test Hospital', rating: 4.5, totalRatings: 10 },
+  { id: 7, name: 'Test Nurse', email: 'nurse@test.com', phone: '+237 600000002', role: 'nurse', licenseNumber: 'TEST-RN-001', password: 'nurse123', status: 'active', joinDate: '2026-01-01', experience: '5 years', specialization: 'General Nursing', rating: 4.5, totalRatings: 10 },
+  { id: 8, name: 'Test Admin', email: 'admin@test.com', phone: '+237 600000003', role: 'admin', password: 'admin123', status: 'active', joinDate: '2026-01-01' },
 ];
 
 const initialAppointments = [
@@ -50,7 +54,23 @@ const initialVideoCalls = [
 export function AppProvider({ children }) {
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('users');
-    return saved ? JSON.parse(saved) : initialUsers;
+    let parsedUsers = saved ? JSON.parse(saved) : initialUsers;
+    
+    // Ensure test users are always present
+    const testUserIds = [6, 7, 8];
+    const testUsersInInitial = initialUsers.filter(u => testUserIds.includes(u.id));
+    
+    // Check if test users exist in saved data
+    const hasAllTestUsers = testUserIds.every(id => parsedUsers.find(u => u.id === id));
+    
+    if (!hasAllTestUsers) {
+      // Merge test users with existing users
+      const mergedUsers = [...parsedUsers.filter(u => !testUserIds.includes(u.id)), ...testUsersInInitial];
+      localStorage.setItem('users', JSON.stringify(mergedUsers));
+      return mergedUsers;
+    }
+    
+    return parsedUsers;
   });
 
   const [currentUser, setCurrentUser] = useState(() => {
@@ -214,24 +234,15 @@ export function AppProvider({ children }) {
   }, [reviews]);
 
   // Auth functions
-  const login = (email, password) => {
+  const login = (email, password, license, specialty, name) => {
+    // Authenticate user by email and password (works for both test and real users)
     const user = users.find(u => u.email === email && u.password === password);
     if (user) {
-      setCurrentUser(user);
-      return { success: true, user };
+      const updatedUser = { ...user, name: name || user.name };
+      setCurrentUser(updatedUser);
+      return { success: true, user: updatedUser };
     }
     return { success: false, error: 'Invalid email or password' };
-  };
-
-  const register = (userData) => {
-    const existingUser = users.find(u => u.email === userData.email);
-    if (existingUser) {
-      return { success: false, error: 'Email already registered' };
-    }
-    const newUser = { ...userData, id: users.length + 1, status: 'active', joinDate: new Date().toISOString().split('T')[0] };
-    setUsers([...users, newUser]);
-    setCurrentUser(newUser);
-    return { success: true, user: newUser };
   };
 
   const logout = () => {
@@ -397,7 +408,6 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     users,
     currentUser,
     login,
-    register,
     logout,
     
     // Appointments

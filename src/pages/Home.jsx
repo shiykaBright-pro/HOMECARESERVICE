@@ -15,7 +15,8 @@ function Home() {
           <h1>Quality Healthcare <br/><span>At Your Doorstep</span></h1>
           <p>Professional medical care from certified doctors and nurses in the comfort of your home. Because your health matters, everywhere.</p>
           <div className="hero-actions">
-            <Link to="/register" className="btn-hero-primary">
+
+            <Link to="/login" className="btn-hero-primary">
               Book Appointment
               <span className="btn-arrow">→</span>
             </Link>
@@ -146,8 +147,8 @@ function Home() {
           <h2>Ready to Get Started?</h2>
           <p>Join thousands of patients who trust us for their healthcare needs.</p>
           <div className="cta-buttons">
-            <Link to="/register" className="btn-cta-primary">Create Account</Link>
-            <Link to="/login" className="btn-cta-secondary">Sign In</Link>
+
+            <Link to="/login" className="btn-cta-primary">Get Started</Link>
           </div>
         </div>
       </section>

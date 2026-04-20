@@ -99,7 +99,7 @@ function Navbar() {
         ) : (
           <>
             <Link to="/login" className="btn-login" onClick={() => setIsMenuOpen(false)}>Login</Link>
-            <Link to="/register" className="btn-register" onClick={() => setIsMenuOpen(false)}>Register</Link>
+
           </>
         )}
       </div>

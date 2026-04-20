@@ -85,7 +85,8 @@ function Services() {
                 <span className="service-price">${service.price}</span>
                 <span className="service-duration">⏱ {service.duration}</span>
               </div>
-              <Link to="/register" className="btn-book-service">Book Now</Link>
+
+              <Link to="/login" className="btn-book-service">Login to Book</Link>
             </div>
           </div>
         ))}

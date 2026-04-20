@@ -119,7 +119,8 @@ function About() {
         <h2>Ready to Get Started?</h2>
         <p>Join thousands of satisfied patients who have chosen HomeCare for their healthcare needs.</p>
         <div style={{display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap'}}>
-          <Link to="/register" className="btn-primary">Register Now</Link>
+
+          <Link to="/login" className="btn-primary">Get Started</Link>
           <Link to="/services" className="btn-secondary">View Services</Link>
         </div>
       </section>
