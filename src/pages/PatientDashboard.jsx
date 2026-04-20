@@ -147,6 +147,7 @@ const handleViewPrescription = (prescription) => {
     setShowModal(true);
   };
 
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -159,6 +160,7 @@ const handleViewPrescription = (prescription) => {
       navigate('/login');
     }
   };
+
 
   // Filter functions
   const filteredAppointments = userAppointments.filter(apt => {

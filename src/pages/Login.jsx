@@ -60,29 +60,8 @@ function Login() {
     setLoading(false);
   };
 
-  // Quick login helper for demo
-  const handleQuickLogin = (userRole) => {
-    const demoUser = users.find(u => u.role === userRole);
-    if (demoUser) {
-      const result = login(demoUser.email, demoUser.password);
-      if (result.success) {
-        switch(result.user.role) {
-          case 'patient':
-            navigate('/dashboard/patient');
-            break;
-          case 'doctor':
-            navigate('/dashboard/doctor');
-            break;
-          case 'nurse':
-            navigate('/dashboard/nurse');
-            break;
-          case 'admin':
-            navigate('/dashboard/admin');
-            break;
-        }
-      }
-    }
-  };
+
+
 
   return (
     <div className="login-page">
@@ -126,18 +105,9 @@ function Login() {
             </button>
           </form>
           
-          {/* Quick Login for Demo */}
-          <div className="quick-login">
-            <p>Quick Demo Login:</p>
-            <div className="quick-login-buttons">
-              <button onClick={() => handleQuickLogin('patient')} className="btn-quick">Patient</button>
-              <button onClick={() => handleQuickLogin('doctor')} className="btn-quick">Doctor</button>
-              <button onClick={() => handleQuickLogin('nurse')} className="btn-quick">Nurse</button>
-              <button onClick={() => handleQuickLogin('admin')} className="btn-quick">Admin</button>
-            </div>
-          </div>
-          
+
           <p className="login-footer">
+
             Don't have an account? <Link to="/register">Register here</Link>
           </p>
         </div>

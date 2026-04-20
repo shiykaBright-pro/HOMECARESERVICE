@@ -294,6 +294,10 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     return newPrescription;
   };
 
+  const deletePrescription = (id) => {
+    setPrescriptions((prev) => (prev || []).filter(p => p.id !== id));
+  };
+
   // Notification functions
   const markNotificationRead = (id) => {
     setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
@@ -410,6 +414,7 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     // Prescriptions
     prescriptions,
     addPrescription,
+    deletePrescription,
     
     // Notifications
     notifications,

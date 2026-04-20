@@ -15,7 +15,8 @@ import Reviews from './pages/Reviews';
 import VideoCall from './components/VideoCall';
 import Payment from './pages/Payment';
 import BookAppointment from './pages/BookAppointment';
-import Emergency from './pages/Emergency'; 
+import Emergency from './pages/Emergency';
+import ErrorBoundary from './components/ErrorBoundary'; 
 
 function App() {
   return (
@@ -31,7 +32,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
           <Route path="/dashboard/patient/payment" element={<Payment />} />
-          <Route path="/dashboard/doctor" element={<DoctorDashboard />} />
+          <Route path="/dashboard/doctor" element={<ErrorBoundary><DoctorDashboard /></ErrorBoundary>} />
           <Route path="/dashboard/nurse" element={<NurseDashboard />} />
           <Route path="/dashboard/admin" element={<AdminDashboard />} />
           <Route path="/messages" element={<Messages />} />
