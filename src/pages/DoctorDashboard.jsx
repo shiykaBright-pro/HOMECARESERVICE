@@ -1139,9 +1139,8 @@ function DoctorDashboard() {
       </aside>
 
       <main className="dashboard-content">
-
-<header className="dashboard-header">
-          <h1>Welcome, {capitalize(currentUser?.role)} {currentUser?.name || 'Doctor'}!</h1>
+        <header className="dashboard-header">
+          <h1>Welcome, Doctor {currentUser?.name || 'Doctor'}!</h1>
         </header>
 
         {renderContent()}

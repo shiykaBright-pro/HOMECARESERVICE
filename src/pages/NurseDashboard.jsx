@@ -661,10 +661,8 @@ function NurseDashboard() {
       </aside>
 
       <main className="dashboard-content">
-const capitalize = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
-
         <header className="dashboard-header">
-          <h1>Welcome, {capitalize(currentUser?.role)} {currentUser?.name || 'Nurse'}!</h1>
+          <h1>Welcome, Nurse {currentUser?.name || 'Nurse'}!</h1>
         </header>
         {renderContent()}
       </main>
