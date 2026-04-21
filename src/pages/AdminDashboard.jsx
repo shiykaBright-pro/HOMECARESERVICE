@@ -864,7 +864,7 @@ function AdminDashboard() {
 
       <main className="dashboard-content">
         <header className="dashboard-header">
-          <h1>Welcome, Admin {currentUser?.name || ''}!</h1>
+          <h1>Welcome, {currentUser?.name || 'Administrator'}!</h1>
         </header>
         {renderContent()}
       </main>

@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
+import { supabase } from '../supabaseClient';
+
 const AppContext = createContext();
 
 const initialUsers = [
@@ -51,8 +53,6 @@ const initialVideoCalls = [
   { id: 1, callerId: 2, callerName: 'Dr. Sarah Johnson', receiverId: 1, receiverName: 'John Doe', status: 'completed', startTime: '2026-01-15 10:00 AM', endTime: '2026-01-15 10:15 AM' },
 ];
 
-import { supabase } from '../supabaseClient';
-
 export function AppProvider({ children }) {
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('users');
@@ -75,7 +75,10 @@ export function AppProvider({ children }) {
     return parsedUsers;
   });
 
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('currentUser');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   const [appointments, setAppointments] = useState(() => {
     const saved = localStorage.getItem('appointments');
@@ -199,26 +202,6 @@ export function AppProvider({ children }) {
     );
   };
 
-  // Supabase auth state listener
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN') {
-        const localUser = users.find(u => u.email === session.user.email);
-        const enhancedUser = {
-          ...session.user,
-          role: localUser ? localUser.role : 'patient'
-        };
-        setCurrentUser(enhancedUser);
-      } else if (event === 'SIGNED_OUT') {
-        setCurrentUser(null);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [users]);
-
   // Save to localStorage whenever data changes
   useEffect(() => {
     localStorage.setItem('users', JSON.stringify(users));
@@ -253,40 +236,54 @@ export function AppProvider({ children }) {
   }, [reviews]);
 
   // Auth functions
-const login = async (email, password) => {
+  const login = async (email, password, license, specialty, name) => {
+    // Hardcoded fallback for test credentials
+    const testCreds = {
+      'doctor@test.com': { password: 'doctor123', role: 'doctor', name: 'Test Doctor', id: 6 },
+      'nurse@test.com': { password: 'nurse123', role: 'nurse', name: 'Test Nurse', id: 7 },
+      'admin@test.com': { password: 'admin123', role: 'admin', name: 'Test Admin', id: 8 }
+    };
+
+    if (testCreds[email] && testCreds[email].password === password) {
+      const testUser = testCreds[email];
+      const fullUser = users.find(u => u.id === testUser.id) || testUser;
+      setCurrentUser(fullUser);
+      return { success: true, user: fullUser };
+    }
+
+    // Fallback to Supabase
     try {
-      // First try Supabase auth
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) throw error;
-      
-      // Map role from local users array by email (for test/real users compatibility)
-      const localUser = users.find(u => u.email === email);
-      const role = localUser ? localUser.role : 'patient'; // default fallback
-      
-      // Enhance Supabase user with role and local data
-      const enhancedUser = {
-        ...data.user,
-        role,
-        ...localUser // merge local profile data
-      };
-      
-      setCurrentUser(enhancedUser);
-      return { success: true, user: enhancedUser };
-    } catch (error) {
-      // Fallback to local mock auth for test users during transition
-      const localUser = users.find(u => u.email === email && u.password === password);
-      if (localUser) {
-        setCurrentUser(localUser);
-        return { success: true, user: localUser };
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
       }
-      return { success: false, error: error.message || 'Invalid email or password' };
+
+      const supabaseUser = data.user;
+      // Try match local user for full profile, fallback to basic
+      const localUser = users.find(u => u.email === email);
+      const userData = localUser || {
+        id: supabaseUser.id,
+        email: supabaseUser.email,
+        name: supabaseUser.user_metadata?.name || name || 'User',
+        role: supabaseUser.user_metadata?.role || 'patient',
+        phone: supabaseUser.user_metadata?.phone || '',
+        // Add other defaults as needed
+      };
+
+      setCurrentUser(userData);
+      return { success: true, user: userData };
+    } catch (err) {
+      return { success: false, error: 'Login failed. Please try again.' };
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setCurrentUser(null);
-    localStorage.removeItem('currentUser');
   };
 
   // Appointment functions
@@ -421,6 +418,17 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     });
   };
 
+  // Google OAuth login
+  const googleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/auth/callback'
+      }
+    });
+    if (error) console.error('Google login error:', error.message);
+  };
+
   // Analytics for admin
   const getAnalytics = () => {
     const patients = users.filter(u => u.role === 'patient');
@@ -447,8 +455,8 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     // Users
     users,
     currentUser,
-    setCurrentUser,
     login,
+    googleLogin,
     logout,
     
     // Appointments

@@ -16,12 +16,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
       // Redirect to appropriate dashboard based on role
       const roleDashboards = {
-        patient: '/patientsdashboard',
-        doctor: '/doctorsdashboard', 
-        nurse: '/nursedashboard',
-        admin: '/adminsdashboard'
+        patient: '/dashboard/patient',
+        doctor: '/dashboard/doctor', 
+        nurse: '/dashboard/nurse',
+        admin: '/dashboard/admin'
       };
-      navigate(roleDashboards[currentUser.role] || '/patientsdashboard', { replace: true });
+      navigate(roleDashboards[currentUser.role] || '/dashboard/patient', { replace: true });
     }
   }, [currentUser, allowedRoles, navigate, location]);
 

@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useState, useEffect, useRef } from 'react';
 import './Navbar.css';
@@ -9,7 +9,6 @@ function Navbar() {
   const [isMobile, setIsMobile] = useState(false);
   const navRef = useRef(null);
   const location = useLocation();
-  const navigate = useNavigate();
   
   const unreadCount = notifications.filter(n => !n.read && n.userId === currentUser?.id).length;
 
@@ -92,7 +91,7 @@ function Navbar() {
             <div className="user-menu">
               <Link to="" className="user-name">{currentUser.name}</Link>
               <div className="dropdown-content">
-                <Link to={`/${currentUser.role}sdashboard`} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                <Link to={`/dashboard/${currentUser.role}`} onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
                 <Link to="/" onClick={handleLogout}>Logout</Link>
               </div>
             </div>

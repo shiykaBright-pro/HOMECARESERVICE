@@ -1,12 +1,10 @@
-// Import createClient from @supabase/supabase-js
-import { createClient } from '@supabase/supabase-js';
+// src/supabaseClient.js
+// Replace the values below with your actual Supabase project credentials
 
-// Replace the URL below with your actual Supabase project URL
-const SUPABASE_URL = "https://aleihwautyitkgoljdrt.supabase.co";
+const SUPABASE_URL = "https://czudhvjomegowmnhnrda.supabase.co";
+const SUPABASE_PUBLIC_KEY = "sb_publishable_wVyLnD7qg57JZtXd9Wm0xA_9CAg6glC";
 
-// Replace the key below with your actual Supabase public anon key
-const SUPABASE_PUBLIC_KEY = "sb_publishable_PagUlrRI0H_Z6SbZqTSzTA_59LVkAOm";
+import { createClient } from "@supabase/supabase-js";
 
-// Create and export the Supabase client
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
 

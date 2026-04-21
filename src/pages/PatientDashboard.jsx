@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 import Navbar from '../components/Navbar';
 
@@ -42,17 +41,6 @@ const [profileForm, setProfileForm] = useState({});
   
   // Get available doctors
   const doctors = users.filter(u => u.role === 'doctor');
-
-  // Clear OAuth hash tokens after login redirect
-  useEffect(() => {
-    if (window.location.hash.includes('access_token') || window.location.hash.includes('provider_token')) {
-      const clearHash = async () => {
-        await supabase.auth.getSession();
-        window.history.replaceState({}, document.title, window.location.pathname);
-      };
-      clearHash();
-    }
-  }, []);
 
   useEffect(() => {
     setProfileForm({
@@ -619,7 +607,7 @@ const handleViewPrescription = (prescription) => {
 
       <main className="dashboard-content">
         <header className="dashboard-header">
-          <h1>Welcome, Patient {currentUser?.name || ''}!</h1>
+          <h1>Welcome, {currentUser?.name || 'Patient'}!</h1>
         </header>
         {renderContent()}
       </main>
