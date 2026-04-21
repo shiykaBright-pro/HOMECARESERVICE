@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../supabaseClient';
 import Navbar from '../components/Navbar';
 import './Login.css';
 import './Dashboard.css';
@@ -33,33 +34,30 @@ function Login() {
     setLoading(true);
     setError('');
 
-    // Test credentials don't require license/specialty, others might
-    const isTestUser = formData.email === 'doctor@test.com' || 
-                       formData.email === 'nurse@test.com' || 
-                       formData.email === 'admin@test.com';
-
     if (!formData.email || !formData.password) {
       setError('Email and password are required');
       setLoading(false);
       return;
     }
 
-    if (!isTestUser && (!formData.license || !formData.specialty)) {
-      setError('Please fill in all fields');
-      setLoading(false);
-      return;
-    }
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
 
-    const result = login(formData.email, formData.password, formData.license, formData.specialty, formData.name);
-    
-    if (result.success) {
-      // Redirect based on user role
-      const route = `/dashboard/${result.user.role}`;
-      navigate(route);
-    } else {
-      setError(result.error);
+      if (error) {
+        setError(error.message);
+        return;
+      }
+
+      // Success - redirect to home
+      navigate('/');
+    } catch (err) {
+      setError('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
