@@ -5,6 +5,7 @@ import About from './pages/About';
 import Services from './pages/Services';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
+import Profile from './pages/Profile';
 
 import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
@@ -29,6 +30,7 @@ function App() {
           <Route path="/contact" element={<Contact />} />
 
 <Route path="/login" element={<Login />} />
+          <Route path="/profile" element={<Profile />} />
 
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
           <Route path="/dashboard/patient/payment" element={<Payment />} />

@@ -607,7 +607,7 @@ const handleViewPrescription = (prescription) => {
           <a href="#doctors" className={activeTab === 'doctors' ? 'active' : ''} onClick={() => {setActiveTab('doctors'); setSidebarOpen(false);}}>Find Doctors</a>
           <a href="#messages" className={activeTab === 'messages' ? 'active' : ''} onClick={() => {setActiveTab('messages'); setSidebarOpen(false);}}>Messages</a>
           <a href="#reviews" className={activeTab === 'reviews' ? 'active' : ''} onClick={() => {setActiveTab('reviews'); setSidebarOpen(false);}}>Reviews</a>
-          <a href="#profile" className={activeTab === 'profile' ? 'active' : ''} onClick={() => {setActiveTab('profile'); setSidebarOpen(false);}}>My Profile</a>
+          <Link to="/profile" className="sidebar-link" onClick={() => setSidebarOpen(false)}>👤 My Profile</Link>
 <button className="sidebar-logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</button>
         </nav>
       </aside>
