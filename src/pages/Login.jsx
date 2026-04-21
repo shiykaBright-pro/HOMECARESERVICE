@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { supabase } from '../supabaseClient';
+import { supabase, signInWithGoogle, handleOAuthCallback } from '../supabaseClient';
 import Navbar from '../components/Navbar';
 import './Login.css';
 import './Dashboard.css';
+import { useEffect } from 'react';
 
 function Login() {
   const navigate = useNavigate();
@@ -83,6 +84,56 @@ function Login() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Handle OAuth callback on component mount
+  useEffect(() => {
+    const checkOAuthSession = async () => {
+      try {
+        const oauthUser = await handleOAuthCallback();
+        if (oauthUser) {
+          console.log("OAuth user authenticated:", oauthUser);
+          
+          // Determine role (default to patient for OAuth users)
+          let role = 'patient';
+          if (oauthUser.email.includes('doctor')) role = 'doctor';
+          if (oauthUser.email.includes('nurse')) role = 'nurse';
+          if (oauthUser.email.includes('admin')) role = 'admin';
+
+          const user = {
+            id: oauthUser.id,
+            email: oauthUser.email,
+            name: oauthUser.user_metadata?.full_name || oauthUser.email.split('@')[0],
+            role,
+          };
+
+          setCurrentUser(user);
+          const dashboardMap = {
+            patient: '/dashboard/patient',
+            doctor: '/dashboard/doctor',
+            nurse: '/dashboard/nurse',
+            admin: '/dashboard/admin'
+          };
+          navigate(dashboardMap[role] || '/');
+        }
+      } catch (err) {
+        console.log("No active OAuth session:", err);
+      }
+    };
+
+    checkOAuthSession();
+  }, [setCurrentUser, navigate]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      await signInWithGoogle();
+    } catch (err) {
+      console.error("Google login error:", err);
+      setError(err.message || 'Google login failed. Please try again.');
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -298,7 +349,7 @@ function Login() {
           
           <div className="social-login">
             <p>or continue with</p>
-            <button type="button" className="btn-google-login" onClick={() => alert('Google login - coming soon!')}>
+            <button type="button" className="btn-google-login" onClick={handleGoogleLogin} disabled={loading}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26.71-.66 1.32-1.13 1.85v2.74h1.83c1.08-.98 1.7-2.42 1.7-4.1z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-1.83-1.42c-.98.66-2.23.99-3.78.99-2.92 0-5.4-1.98-6.28-4.66H4.08v1.44c0 3.73 3.39 6.64 6.92 6.64z" fill="#34A853"/>
