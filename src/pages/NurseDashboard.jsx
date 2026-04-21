@@ -662,7 +662,7 @@ function NurseDashboard() {
 
       <main className="dashboard-content">
         <header className="dashboard-header">
-          <h1>Welcome, {currentUser?.name || 'Nurse'}!</h1>
+          <h1>Welcome, Nurse {currentUser?.name || ''}!</h1>
         </header>
         {renderContent()}
       </main>

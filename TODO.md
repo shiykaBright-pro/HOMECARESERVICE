@@ -1,21 +1,33 @@
-# Supabase Auth Integration TODO
+# Role-Based Auth & Dashboard Navigation Fix
 
-## ✅ Completed
-- [x] Create src/supabaseClient.js
-- [x] Plan confirmed by user
+## Approved Plan Steps:
 
-## ⏳ In Progress  
-**Step 1:** ✅ Update AppContext.jsx with Supabase auth logic
-**Step 2:** ✅ Update Login.jsx form submission  
+### 1. Create this TODO.md [✅ COMPLETED]
 
-**Step 3:** ✅ Test login flow (deps installed, dev server running at http://localhost:5173/)
+### 2. Verify current users data
+- Check browser console/localStorage for 'users' array
+- Ensure test users present: doctor@test.com/doctor123, etc. [ℹ️ Added console.log in Login.jsx]
 
-## ✅ Integration Complete
-- Supabase auth connected to Login
-- Test with: doctor@test.com / doctor123 → DoctorDashboard
-- Hybrid mode: Falls back to local for un-migrated users
-- Role-based dashboard redirects working
-- Error handling in place
-- No UI changes made
+### 3. Update src/pages/Login.jsx [✅ COMPLETED]
+- Trim/lowercase email/password validation ✓
+- Simplify form (email/password only) ✓
+- Add debug logging ✓
 
-Next: Migrate local users to Supabase table, remove fallback.
+### 4. Update src/context/AppContext.jsx [PENDING]
+- Force reload test users if missing
+
+### 5. Add welcome messages to dashboards [PENDING]
+- DoctorDashboard.jsx: Welcome Doctor
+- NurseDashboard.jsx: Welcome Nurse  
+- AdminDashboard.jsx: Welcome Admin
+- PatientDashboard.jsx: Welcome Patient
+
+### 6. Test authentication [🔄 IN PROGRESS]
+- Dev server running: http://localhost:5173/
+- Test: doctor@test.com/doctor123 → /doctorsdashboard
+- Test Google → /patientsdashboard (patient)
+
+### 7. attempt_completion [PENDING]
+
+**Progress: 3/7 completed**
+

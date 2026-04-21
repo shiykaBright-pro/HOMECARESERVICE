@@ -18,11 +18,8 @@ function Login() {
   };
 
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
-    password: '',
-    license: '',
-    specialty: ''
+    password: ''
   });
 
   const [error, setError] = useState('');
@@ -89,7 +86,7 @@ function Login() {
     }
   };
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -100,14 +97,21 @@ function Login() {
       return;
     }
 
+    const emailLower = formData.email.trim().toLowerCase();
+    const passwordTrimmed = formData.password.trim();
+    
+    console.log('Login attempt:', { emailLower, passwordTrimmed, availableUsers: users.map(u => ({email: u.email, role: u.role})) });
+
     // Hardcoded credentials validation
-    const user = users.find(u => u.email === formData.email && u.password === formData.password);
+    const user = users.find(u => u.email.toLowerCase() === emailLower && u.password === passwordTrimmed);
     if (!user) {
+      console.error('No matching user found');
       setError('Invalid email or password');
       setLoading(false);
       return;
     }
 
+    console.log('Login successful, role:', user.role);
     // Set current user and navigate based on role
     setCurrentUser(user);
     navigate(rolePaths[user.role]);
@@ -134,23 +138,13 @@ function Login() {
           {error && <div className="error-message">{error}</div>}
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Enter your name"
-              />
-            </div>
-            <div className="form-group">
               <label>Email</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter your email"
+                placeholder="doctor@test.com"
                 required
               />
             </div>
@@ -162,35 +156,9 @@ function Login() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Enter your password"
+                placeholder="doctor123"
                 required
               />
-            </div>
-            <div className="form-group">
-              <label>License Number (Optional for test users)</label>
-              <input
-                type="text"
-                name="license"
-                value={formData.license}
-                onChange={handleChange}
-                placeholder="Enter license number"
-              />
-            </div>
-            <div className="form-group">
-              <label>Specialty (Optional for test users)</label>
-              <select 
-                name="specialty" 
-                value={formData.specialty}
-                onChange={handleChange}
-              >
-                <option value="">Select Specialty</option>
-                <option value="general">General Medicine</option>
-                <option value="cardiology">Cardiology</option>
-                <option value="pediatrics">Pediatrics</option>
-                <option value="orthopedics">Orthopedics</option>
-                <option value="dermatology">Dermatology</option>
-                <option value="neurology">Neurology</option>
-              </select>
             </div>
 
             <button type="submit" className="btn-login-submit" disabled={loading}>
