@@ -407,6 +407,7 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     // Users
     users,
     currentUser,
+    setCurrentUser,
     login,
     logout,
     

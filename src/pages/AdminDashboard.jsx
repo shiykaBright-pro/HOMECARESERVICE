@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import './Dashboard.css';
 
 function AdminDashboard() {
-  const { logout, users: contextUsers, appointments: contextAppointments, updateAppointment, getAnalytics } = useApp();
+  const { currentUser, logout, users: contextUsers, appointments: contextAppointments, updateAppointment, getAnalytics } = useApp();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);

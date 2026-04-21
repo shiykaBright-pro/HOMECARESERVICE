@@ -8,7 +8,7 @@ import './Dashboard.css';
 
 function Login() {
   const navigate = useNavigate();
-  const { login } = useApp();
+  const { setCurrentUser, users } = useApp();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -40,21 +40,103 @@ function Login() {
       return;
     }
 
+    console.log("Login attempt:", formData.email);
+
     try {
+      // Try Supabase authentication first
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
-        password: formData.password,
+        password: formData.password
       });
 
+      console.log("Response:", data);
+
+      // If Supabase fails with invalid credentials, try local authentication
+      if (error && error.message.includes("Invalid login credentials")) {
+        console.log("Supabase auth failed, trying local authentication...");
+        
+        // Fall back to local user authentication
+        const localUser = users.find(u => u.email === formData.email && u.password === formData.password);
+        
+        if (localUser) {
+          console.log("Local user found:", localUser);
+          
+          const user = {
+            id: localUser.id,
+            email: localUser.email,
+            name: formData.name || localUser.name,
+            role: localUser.role,
+            ...(formData.license && { license: formData.license }),
+            ...(formData.specialty && { specialty: formData.specialty })
+          };
+
+          setCurrentUser(user);
+          // Navigate to appropriate dashboard based on role
+          const dashboardMap = {
+            patient: '/dashboard/patient',
+            doctor: '/dashboard/doctor',
+            nurse: '/dashboard/nurse',
+            admin: '/dashboard/admin'
+          };
+          navigate(dashboardMap[localUser.role.toLowerCase()] || '/');
+          return;
+        } else {
+          setError("Incorrect email or password");
+          setLoading(false);
+          return;
+        }
+      }
+
       if (error) {
-        setError(error.message);
+        console.error("Supabase login error:", error);
+        let errorMessage = error.message;
+        if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please verify your email before logging in";
+        }
+        setError(errorMessage);
+        setLoading(false);
         return;
       }
 
-      // Success - redirect to home
-      navigate('/');
+      if (data.user) {
+        // Map role for test users, fallback to patient
+        let role = 'patient';
+        let name = formData.name || data.user.email.split('@')[0];
+        
+        if (formData.email === 'doctor@test.com') {
+          role = 'doctor';
+          name = 'Test Doctor';
+        } else if (formData.email === 'nurse@test.com') {
+          role = 'nurse';
+          name = 'Test Nurse';
+        } else if (formData.email === 'admin@test.com') {
+          role = 'admin';
+          name = 'Test Admin';
+        }
+
+        const user = {
+          id: data.user.id,
+          email: data.user.email,
+          name,
+          role,
+          // Add other fields from form if available
+          ...(formData.license && { license: formData.license }),
+          ...(formData.specialty && { specialty: formData.specialty })
+        };
+
+        setCurrentUser(user);
+        // Navigate to appropriate dashboard based on role
+        const dashboardMap = {
+          patient: '/dashboard/patient',
+          doctor: '/dashboard/doctor',
+          nurse: '/dashboard/nurse',
+          admin: '/dashboard/admin'
+        };
+        navigate(dashboardMap[role.toLowerCase()] || '/');
+      }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      console.error("Unexpected login error:", err);
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -74,6 +156,11 @@ function Login() {
               <div><strong>Doctor:</strong> doctor@test.com / doctor123</div>
               <div><strong>Nurse:</strong> nurse@test.com / nurse123</div>
               <div><strong>Admin:</strong> admin@test.com / admin123</div>
+            </div>
+            <div style={{marginTop: '10px'}}>
+              <button type="button" onClick={() => setFormData({...formData, email: 'doctor@test.com', password: 'doctor123'})} style={{marginRight: '5px', padding: '5px 10px', fontSize: '12px'}}>Fill Doctor</button>
+              <button type="button" onClick={() => setFormData({...formData, email: 'nurse@test.com', password: 'nurse123'})} style={{marginRight: '5px', padding: '5px 10px', fontSize: '12px'}}>Fill Nurse</button>
+              <button type="button" onClick={() => setFormData({...formData, email: 'admin@test.com', password: 'admin123'})} style={{padding: '5px 10px', fontSize: '12px'}}>Fill Admin</button>
             </div>
           </div>
 
@@ -158,7 +245,7 @@ function Login() {
           </div>
 
           <p className="login-footer">
-            Login only - no registration
+            Login to HomeCare
           </p>
         </div>
       </div>
