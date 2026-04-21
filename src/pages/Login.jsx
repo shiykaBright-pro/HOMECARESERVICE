@@ -10,15 +10,68 @@ function Login() {
   const navigate = useNavigate();
   const { setCurrentUser, users: contextUsers } = useApp();
 
-  // Fallback test credentials if context users aren't available
-  const testUsers = [
-    { id: 6, name: 'Test Doctor', email: 'doctor@test.com', password: 'doctor123', role: 'doctor' },
-    { id: 7, name: 'Test Nurse', email: 'nurse@test.com', password: 'nurse123', role: 'nurse' },
-    { id: 8, name: 'Test Admin', email: 'admin@test.com', password: 'admin123', role: 'admin' },
+  // Complete fallback test credentials with all necessary fields
+  const defaultTestUsers = [
+    { 
+      id: 6, 
+      name: 'Test Doctor', 
+      email: 'doctor@test.com', 
+      password: 'doctor123', 
+      role: 'doctor',
+      phone: '+237 600000001',
+      specialty: 'General Medicine',
+      licenseNumber: 'TEST-MD-001',
+      status: 'active',
+      joinDate: '2026-01-01'
+    },
+    { 
+      id: 7, 
+      name: 'Test Nurse', 
+      email: 'nurse@test.com', 
+      password: 'nurse123', 
+      role: 'nurse',
+      phone: '+237 600000002',
+      licenseNumber: 'TEST-RN-001',
+      specialization: 'General Nursing',
+      status: 'active',
+      joinDate: '2026-01-01'
+    },
+    { 
+      id: 8, 
+      name: 'Test Admin', 
+      email: 'admin@test.com', 
+      password: 'admin123', 
+      role: 'admin',
+      phone: '+237 600000003',
+      status: 'active',
+      joinDate: '2026-01-01'
+    },
   ];
 
-  // Combine context users with test users (prioritize context users)
-  const users = contextUsers && contextUsers.length > 0 ? contextUsers : testUsers;
+  // Ensure test users are always available
+  const ensureTestUsers = (usersList) => {
+    if (!usersList || usersList.length === 0) {
+      console.warn("No context users available, using default test users");
+      return defaultTestUsers;
+    }
+    
+    // Check if test users exist in the list
+    const testUserEmails = ['doctor@test.com', 'nurse@test.com', 'admin@test.com'];
+    const hasAllTestUsers = testUserEmails.every(email => usersList.find(u => u.email === email));
+    
+    if (!hasAllTestUsers) {
+      console.warn("Some test users missing from context, merging with defaults");
+      // Merge: keep context users but add missing test users
+      const missingTestUsers = defaultTestUsers.filter(tu => 
+        !usersList.find(u => u.email === tu.email)
+      );
+      return [...usersList, ...missingTestUsers];
+    }
+    
+    return usersList;
+  };
+
+  const users = ensureTestUsers(contextUsers);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -62,17 +115,21 @@ function Login() {
       console.log("Response:", data);
 
       // If Supabase fails with invalid credentials, try local authentication
-      if (error && error.message.includes("Invalid login credentials")) {
-        console.log("Supabase auth failed, trying local authentication...");
-        console.log("Available users:", users);
-        console.log("Looking for email:", formData.email, "with password:", formData.password);
+      if (error) {
+        console.error("Supabase login error:", error);
+        console.log("Attempting local authentication as fallback...");
         
-        // Fall back to local user authentication
-        const localUser = users.find(u => u.email === formData.email && u.password === formData.password);
-        
-        console.log("Local user found:", localUser);
+        // Always try local authentication if Supabase fails
+        const localUser = users.find(u => {
+          const emailMatch = u.email === formData.email;
+          const passwordMatch = u.password === formData.password;
+          console.log(`Checking user ${u.email}: email=${emailMatch}, password=${passwordMatch}`);
+          return emailMatch && passwordMatch;
+        });
         
         if (localUser) {
+          console.log("Local user found:", localUser);
+          
           const user = {
             id: localUser.id,
             email: localUser.email,
@@ -92,18 +149,14 @@ function Login() {
           };
           navigate(dashboardMap[localUser.role.toLowerCase()] || '/');
           return;
-        } else {
-          setError("Incorrect email or password");
-          setLoading(false);
-          return;
         }
-      }
-
-      if (error) {
-        console.error("Supabase login error:", error);
+        
+        // If local auth also fails, show error
         let errorMessage = error.message;
         if (error.message.includes("Email not confirmed")) {
           errorMessage = "Please verify your email before logging in";
+        } else if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "Incorrect email or password";
         }
         setError(errorMessage);
         setLoading(false);
