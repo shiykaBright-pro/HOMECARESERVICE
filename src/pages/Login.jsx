@@ -8,7 +8,17 @@ import './Dashboard.css';
 
 function Login() {
   const navigate = useNavigate();
-  const { setCurrentUser, users } = useApp();
+  const { setCurrentUser, users: contextUsers } = useApp();
+
+  // Fallback test credentials if context users aren't available
+  const testUsers = [
+    { id: 6, name: 'Test Doctor', email: 'doctor@test.com', password: 'doctor123', role: 'doctor' },
+    { id: 7, name: 'Test Nurse', email: 'nurse@test.com', password: 'nurse123', role: 'nurse' },
+    { id: 8, name: 'Test Admin', email: 'admin@test.com', password: 'admin123', role: 'admin' },
+  ];
+
+  // Combine context users with test users (prioritize context users)
+  const users = contextUsers && contextUsers.length > 0 ? contextUsers : testUsers;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -54,13 +64,15 @@ function Login() {
       // If Supabase fails with invalid credentials, try local authentication
       if (error && error.message.includes("Invalid login credentials")) {
         console.log("Supabase auth failed, trying local authentication...");
+        console.log("Available users:", users);
+        console.log("Looking for email:", formData.email, "with password:", formData.password);
         
         // Fall back to local user authentication
         const localUser = users.find(u => u.email === formData.email && u.password === formData.password);
         
+        console.log("Local user found:", localUser);
+        
         if (localUser) {
-          console.log("Local user found:", localUser);
-          
           const user = {
             id: localUser.id,
             email: localUser.email,
