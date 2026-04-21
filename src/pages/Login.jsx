@@ -1,14 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-import { supabase } from '../supabaseClient';
 import Navbar from '../components/Navbar';
 import './Login.css';
 import './Dashboard.css';
 
 function Login() {
   const navigate = useNavigate();
-  const { setCurrentUser, googleLogin } = useApp();
+  const { setCurrentUser, users, googleLogin } = useApp();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -17,6 +16,13 @@ function Login() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Hardcoded credentials mapping
+  const credentials = {
+    'doctor@test.com': { password: 'doctor123', role: 'doctor', name: 'Test Doctor', id: 6 },
+    'nurse@test.com': { password: 'nurse123', role: 'nurse', name: 'Test Nurse', id: 7 },
+    'admin@test.com': { password: 'admin123', role: 'admin', name: 'Test Admin', id: 8 }
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -31,57 +37,50 @@ function Login() {
     setLoading(true);
     setError('');
 
-    if (!formData.email || !formData.password) {
+    const { email, password } = formData;
+
+    if (!email || !password) {
       setError('Email and password are required');
       setLoading(false);
       return;
     }
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email: formData.email, 
-        password: formData.password 
-      });
-
-      if (error) throw error;
-
-      // Fetch full user profile and match with local users or use metadata
-      const { data: { user } } = data;
-      const localUser = users.find(u => u.email === user.email);
-      
-      const fullUser = localUser || {
-        id: user.id,
-        email: user.email,
-        name: user.user_metadata?.name || user.email.split('@')[0],
-        role: user.user_metadata?.role || 'patient',
-        phone: user.user_metadata?.phone || '',
-        status: 'active'
-      };
-
-      setCurrentUser(fullUser);
-
-      // Redirect based on role
-      let route;
-      switch (fullUser.role) {
-        case 'doctor':
-          route = '/dashboard/doctor';
-          break;
-        case 'nurse':
-          route = '/dashboard/nurse';
-          break;
-        case 'admin':
-          route = '/dashboard/admin';
-          break;
-        default:
-          route = '/dashboard/patient';
-      }
-      navigate(route, { replace: true });
-
-    } catch (err) {
-      setError(err.message || 'Login failed. Please check your credentials.');
-    } finally {
+    // Validate against hardcoded credentials
+    const userConfig = credentials[email];
+    if (!userConfig || userConfig.password !== password) {
+      setError('Invalid email or password');
       setLoading(false);
+      return;
     }
+
+    // Find full user profile from context
+    const fullUser = users.find(u => u.email === email && u.id === userConfig.id) || {
+      ...userConfig,
+      email,
+      phone: '+237 60000000' + userConfig.id,
+      status: 'active'
+    };
+
+    setCurrentUser(fullUser);
+
+    // Role-based redirect (EXACT routes)
+    let route;
+    switch (userConfig.role) {
+      case 'doctor':
+        route = '/doctorsdashboard';
+        break;
+      case 'nurse':
+        route = '/nursedashboard';
+        break;
+      case 'admin':
+        route = '/adminsdashboard';
+        break;
+      default:
+        route = '/patientsdashboard';
+    }
+
+    setLoading(false);
+    navigate(route, { replace: true });
   };
 
   return (
@@ -91,15 +90,13 @@ function Login() {
         <div className="login-box">
           <h2>Login to HomeCare</h2>
           
-          {/* Test Credentials Info */}
+          {/* Test Credentials */}
           <div style={{backgroundColor: '#f0f8ff', border: '1px solid #4a90e2', borderRadius: '5px', padding: '12px', marginBottom: '20px', fontSize: '13px'}}>
-            <strong>🧪 Test Credentials (Development Only):</strong>
+            <strong>🧪 HARDCODED Test Credentials:</strong>
             <div style={{marginTop: '8px', lineHeight: '1.5'}}>
-              <div><strong>Doctor:</strong> doctor@test.com / doctor123</div>
-              <div><strong>Nurse:</strong> nurse@test.com / nurse123</div>
-              <div><strong>Admin:</strong> admin@test.com / admin123</div>
-              <br/>
-              <div><em>Or use your real Supabase users with role in user_metadata!</em></div>
+              <div><strong>Doctor:</strong> doctor@test.com / doctor123 → /doctorsdashboard</div>
+              <div><strong>Nurse:</strong> nurse@test.com / nurse123 → /nursedashboard</div>
+              <div><strong>Admin:</strong> admin@test.com / admin123 → /adminsdashboard</div>
             </div>
           </div>
 
@@ -143,7 +140,7 @@ function Login() {
                 <path d="M5.72 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H4.08C3.11 8.47 2.43 9.94 2.43 11.5s.68 3.03 1.83 4.25l1.46-1.16z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l1.15-1.15C17.46 4.38 14.97 3 12 3c-3.53 0-6.53 2.24-7.73 5.36H7.72c.88-2.68 3.36-4.62 6.28-4.62z" fill="#EA4334"/>
               </svg>
-              Continue with Google
+              Continue with Google (→ Patient)
             </button>
           </div>
 
