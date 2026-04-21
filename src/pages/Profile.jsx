@@ -109,20 +109,47 @@ function Profile() {
       setError('');
       setSuccess('');
 
-      // Update profile in Supabase
+      // Check if user is authenticated with Supabase
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        // User is not Supabase authenticated, save locally only
+        console.log('User not Supabase authenticated, saving locally only');
+
+        // Update currentUser in context
+        const updatedUser = {
+          ...currentUser,
+          name: profileData.name.trim(),
+          licenseNumber: profileData.license.trim(),
+          specialty: profileData.specialty.trim()
+        };
+        setCurrentUser(updatedUser);
+
+        setSuccess('Profile updated locally! (Not connected to database)');
+
+        // Clear success message after 3 seconds
+        setTimeout(() => setSuccess(''), 3000);
+        setSaving(false);
+        return;
+      }
+
+      // User is Supabase authenticated, save to database
+      console.log('User is Supabase authenticated, saving to database');
+
       const { error: upsertError } = await supabase
         .from('profiles')
         .upsert({
-          id: currentUser.id,
+          id: user.id,
           name: profileData.name.trim(),
           email: currentUser.email,
           role: currentUser.role,
-          license: profileData.license.trim(),
-          specialty: profileData.specialty.trim(),
+          license: profileData.license.trim() || null,
+          specialty: profileData.specialty.trim() || null,
           updated_at: new Date().toISOString()
         });
 
       if (upsertError) {
+        console.error('Supabase upsert error:', upsertError);
         throw upsertError;
       }
 
@@ -135,7 +162,7 @@ function Profile() {
       };
       setCurrentUser(updatedUser);
 
-      setSuccess('Profile updated successfully!');
+      setSuccess('Profile updated successfully in database!');
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);

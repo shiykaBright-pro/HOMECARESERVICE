@@ -180,6 +180,33 @@ function Login() {
         
         if (localUser) {
           console.log("Local user found:", localUser);
+
+          // Try to sign up/create the user in Supabase auth
+          try {
+            console.log("Attempting to create/sign in user in Supabase auth...");
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+              email: localUser.email,
+              password: localUser.password,
+              options: {
+                data: {
+                  name: localUser.name,
+                  role: localUser.role,
+                  license: localUser.licenseNumber,
+                  specialty: localUser.specialty
+                }
+              }
+            });
+
+            if (authError && authError.message !== 'User already registered') {
+              console.warn("Supabase auth signup failed:", authError);
+              // Continue with local auth only
+            } else {
+              console.log("Supabase auth successful:", authData);
+            }
+          } catch (authErr) {
+            console.warn("Supabase auth error:", authErr);
+            // Continue with local auth
+          }
           
           const user = {
             id: localUser.id,
