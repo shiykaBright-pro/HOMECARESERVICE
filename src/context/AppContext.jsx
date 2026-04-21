@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
 const AppContext = createContext();
 
@@ -245,8 +246,10 @@ export function AppProvider({ children }) {
     return { success: false, error: 'Invalid email or password' };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setCurrentUser(null);
+    localStorage.removeItem('currentUser');
   };
 
   // Appointment functions

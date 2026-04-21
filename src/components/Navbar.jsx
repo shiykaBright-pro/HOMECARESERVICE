@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useState, useEffect, useRef } from 'react';
 import './Navbar.css';
@@ -9,12 +9,13 @@ function Navbar() {
   const [isMobile, setIsMobile] = useState(false);
   const navRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
   
   const unreadCount = notifications.filter(n => !n.read && n.userId === currentUser?.id).length;
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
     setIsMenuOpen(false);
   };
 

@@ -49,6 +49,19 @@ function AdminDashboard() {
     if (contextAppointments) setLocalAppointments(contextAppointments);
   }, [contextAppointments]);
 
+  // Authentication check - redirect to login if not authenticated or not admin
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+    } else if (currentUser.role !== 'admin') {
+      switch(currentUser.role) {
+        case 'patient': navigate('/dashboard/patient'); break;
+        case 'doctor': navigate('/dashboard/doctor'); break;
+        case 'nurse': navigate('/dashboard/nurse'); break;
+      }
+    }
+  }, [currentUser, navigate]);
+
   // Phase 1: Reusable components
 
   // Reusable FormModal Component (Step 2)

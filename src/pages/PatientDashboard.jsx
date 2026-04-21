@@ -42,6 +42,13 @@ const [profileForm, setProfileForm] = useState({});
   // Get available doctors
   const doctors = users.filter(u => u.role === 'doctor');
 
+  // Authentication check - redirect to login if not authenticated
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+    }
+  }, [currentUser, navigate]);
+
   useEffect(() => {
     setProfileForm({
       name: currentUser.name || '',
