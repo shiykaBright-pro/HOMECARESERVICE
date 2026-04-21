@@ -17,7 +17,11 @@ function Profile() {
     email: '',
     role: '',
     license: '',
-    specialty: ''
+    specialty: '',
+    // Patient-specific fields
+    age: '',
+    gender: '',
+    medical_history: ''
   });
 
   // Authentication check
@@ -40,24 +44,83 @@ function Profile() {
       setLoading(true);
       setError('');
 
-      // Try to fetch from Supabase profiles table
-      const { data: profile, error: fetchError } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', currentUser.id)
-        .single();
+      // Check if user is authenticated with Supabase
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = not found
-        console.warn('Error fetching profile:', fetchError);
+      if (authError || !user) {
+        console.log('User not authenticated, using local data only');
+        // Use local currentUser data
+        setProfileData({
+          name: currentUser.name || '',
+          email: currentUser.email || '',
+          role: currentUser.role || '',
+          license: currentUser.licenseNumber || '',
+          specialty: currentUser.specialty || '',
+          age: currentUser.age || '',
+          gender: currentUser.gender || '',
+          medical_history: currentUser.medical_history || ''
+        });
+        setLoading(false);
+        return;
       }
 
-      // Use Supabase data if available, otherwise fallback to currentUser
+      // Load from profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.warn('Error fetching profile:', profileError);
+      }
+
+      let roleSpecificData = {};
+
+      // Load role-specific data
+      if (currentUser.role === 'patient') {
+        const { data: patientData, error: patientError } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (patientError && patientError.code !== 'PGRST116') {
+          console.warn('Error fetching patient data:', patientError);
+        }
+
+        roleSpecificData = {
+          age: patientData?.age || '',
+          gender: patientData?.gender || '',
+          medical_history: patientData?.medical_history || ''
+        };
+      } else if (currentUser.role === 'doctor') {
+        const { data: doctorData, error: doctorError } = await supabase
+          .from('doctors')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+
+        if (doctorError && doctorError.code !== 'PGRST116') {
+          console.warn('Error fetching doctor data:', doctorError);
+        }
+
+        roleSpecificData = {
+          specialty: doctorData?.specialty || '',
+          license: doctorData?.license || ''
+        };
+      }
+
+      // Combine all data
       setProfileData({
         name: profile?.name || currentUser.name || '',
         email: currentUser.email || '',
         role: profile?.role || currentUser.role || '',
-        license: profile?.license || currentUser.licenseNumber || '',
-        specialty: profile?.specialty || currentUser.specialty || ''
+        license: roleSpecificData.license || profile?.license || currentUser.licenseNumber || '',
+        specialty: roleSpecificData.specialty || profile?.specialty || currentUser.specialty || '',
+        age: roleSpecificData.age || '',
+        gender: roleSpecificData.gender || '',
+        medical_history: roleSpecificData.medical_history || ''
       });
 
     } catch (err) {
@@ -133,10 +196,18 @@ function Profile() {
         return;
       }
 
-      // User is Supabase authenticated, save to database
-      console.log('User is Supabase authenticated, saving to database');
+// User is Supabase authenticated, save to database
+      console.log('Supabase user:', user.id);
+      console.log('Form data for insert:', {
+        id: user.id,
+        name: profileData.name.trim(),
+        email: currentUser.email,
+        role: currentUser.role,
+        license: profileData.license.trim() || null,
+        specialty: profileData.specialty.trim() || null
+      });
 
-      const { error: upsertError } = await supabase
+      const { data: upsertData, error: upsertError } = await supabase
         .from('profiles')
         .upsert({
           id: user.id,
@@ -144,14 +215,18 @@ function Profile() {
           email: currentUser.email,
           role: currentUser.role,
           license: profileData.license.trim() || null,
-          specialty: profileData.specialty.trim() || null,
-          updated_at: new Date().toISOString()
+          specialty: profileData.specialty.trim() || null
         });
+
+      console.log('Upsert result:', { data: upsertData, error: upsertError });
 
       if (upsertError) {
         console.error('Supabase upsert error:', upsertError);
+        setError(`Database error: ${upsertError.message}`);
         throw upsertError;
       }
+
+      console.log('✅ Profile saved to database successfully!');
 
       // Update currentUser in context
       const updatedUser = {

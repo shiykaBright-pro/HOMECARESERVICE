@@ -1,9 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://czudhvjomegowmnhnrda.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_wVyLnD7qg57JZtXd9Wm0xA_9CAg6glC';
 
-console.log(supabaseUrl, supabaseAnonKey);
+console.log('Supabase client init:', { 
+  url: supabaseUrl ? '✅ Loaded' : '❌ Missing - using fallback', 
+  key: supabaseAnonKey ? '✅ Loaded' : '❌ Missing - using fallback' 
+});
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -75,7 +78,7 @@ export const testDatabaseConnection = async () => {
 
     // Test 2: Try to insert a test record (this will fail if RLS is blocking)
     const testData = {
-      id: '00000000-0000-0000-0000-000000000000', // Dummy UUID
+      id: 'test-' + Date.now(),
       name: 'Test User',
       email: 'test@example.com',
       role: 'patient',
