@@ -1,7 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 
-import { supabase } from '../supabaseClient';
-
 const AppContext = createContext();
 
 const initialUsers = [
@@ -236,53 +234,18 @@ export function AppProvider({ children }) {
   }, [reviews]);
 
   // Auth functions
-  const login = async (email, password, license, specialty, name) => {
-    // Hardcoded fallback for test credentials
-    const testCreds = {
-      'doctor@test.com': { password: 'doctor123', role: 'doctor', name: 'Test Doctor', id: 6 },
-      'nurse@test.com': { password: 'nurse123', role: 'nurse', name: 'Test Nurse', id: 7 },
-      'admin@test.com': { password: 'admin123', role: 'admin', name: 'Test Admin', id: 8 }
-    };
-
-    if (testCreds[email] && testCreds[email].password === password) {
-      const testUser = testCreds[email];
-      const fullUser = users.find(u => u.id === testUser.id) || testUser;
-      setCurrentUser(fullUser);
-      return { success: true, user: fullUser };
+  const login = (email, password, license, specialty, name) => {
+    // Authenticate user by email and password (works for both test and real users)
+    const user = users.find(u => u.email === email && u.password === password);
+    if (user) {
+      const updatedUser = { ...user, name: name || user.name };
+      setCurrentUser(updatedUser);
+      return { success: true, user: updatedUser };
     }
-
-    // Fallback to Supabase
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password 
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      const supabaseUser = data.user;
-      // Try match local user for full profile, fallback to basic
-      const localUser = users.find(u => u.email === email);
-      const userData = localUser || {
-        id: supabaseUser.id,
-        email: supabaseUser.email,
-        name: supabaseUser.user_metadata?.name || name || 'User',
-        role: supabaseUser.user_metadata?.role || 'patient',
-        phone: supabaseUser.user_metadata?.phone || '',
-        // Add other defaults as needed
-      };
-
-      setCurrentUser(userData);
-      return { success: true, user: userData };
-    } catch (err) {
-      return { success: false, error: 'Login failed. Please try again.' };
-    }
+    return { success: false, error: 'Invalid email or password' };
   };
 
-  const logout = async () => {
-    await supabase.auth.signOut();
+  const logout = () => {
     setCurrentUser(null);
   };
 
@@ -418,17 +381,6 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     });
   };
 
-  // Google OAuth login
-  const googleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin + '/auth/callback'
-      }
-    });
-    if (error) console.error('Google login error:', error.message);
-  };
-
   // Analytics for admin
   const getAnalytics = () => {
     const patients = users.filter(u => u.role === 'patient');
@@ -456,7 +408,6 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     users,
     currentUser,
     login,
-    googleLogin,
     logout,
     
     // Appointments

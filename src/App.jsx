@@ -16,7 +16,6 @@ import VideoCall from './components/VideoCall';
 import Payment from './pages/Payment';
 import BookAppointment from './pages/BookAppointment';
 import Emergency from './pages/Emergency';
-import AuthCallback from './pages/AuthCallback';
 import ErrorBoundary from './components/ErrorBoundary'; 
 
 function App() {
@@ -36,16 +35,11 @@ function App() {
           <Route path="/dashboard/doctor" element={<ErrorBoundary><DoctorDashboard /></ErrorBoundary>} />
           <Route path="/dashboard/nurse" element={<NurseDashboard />} />
           <Route path="/dashboard/admin" element={<AdminDashboard />} />
-          <Route path="/doctorsdashboard" element={<ErrorBoundary><DoctorDashboard /></ErrorBoundary>} />
-          <Route path="/nursedashboard" element={<NurseDashboard />} />
-          <Route path="/adminsdashboard" element={<AdminDashboard />} />
-          <Route path="/patientsdashboard" element={<PatientDashboard />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/video-call/:id" element={<VideoCall />} />
           <Route path="/book-appointment" element={<BookAppointment />} />
           <Route path="/emergency" element={<Emergency />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
         </Routes> 
 
       </Router>

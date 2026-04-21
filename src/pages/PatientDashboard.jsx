@@ -607,7 +607,7 @@ const handleViewPrescription = (prescription) => {
 
       <main className="dashboard-content">
         <header className="dashboard-header">
-          <h1>Welcome, Patient {currentUser?.name || 'Patient'}!</h1>
+          <h1>Welcome, {currentUser?.name || 'Patient'}!</h1>
         </header>
         {renderContent()}
       </main>
