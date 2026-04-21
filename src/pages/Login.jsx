@@ -1,20 +1,18 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../supabaseClient';
 import Navbar from '../components/Navbar';
 import './Login.css';
 import './Dashboard.css';
 
 function Login() {
   const navigate = useNavigate();
-  const { login, googleLogin } = useApp();
+  const { setCurrentUser, googleLogin } = useApp();
 
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
-    password: '',
-    license: '',
-    specialty: ''
+    password: ''
   });
 
   const [error, setError] = useState('');
@@ -39,29 +37,51 @@ function Login() {
       return;
     }
 
-    const result = await login(formData.email, formData.password);
-    
-    if (result.success) {
-      // Redirect based on user role (new paths)
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email: formData.email, 
+        password: formData.password 
+      });
+
+      if (error) throw error;
+
+      // Fetch full user profile and match with local users or use metadata
+      const { data: { user } } = data;
+      const localUser = users.find(u => u.email === user.email);
+      
+      const fullUser = localUser || {
+        id: user.id,
+        email: user.email,
+        name: user.user_metadata?.name || user.email.split('@')[0],
+        role: user.user_metadata?.role || 'patient',
+        phone: user.user_metadata?.phone || '',
+        status: 'active'
+      };
+
+      setCurrentUser(fullUser);
+
+      // Redirect based on role
       let route;
-      switch (result.user.role) {
+      switch (fullUser.role) {
         case 'doctor':
-          route = '/doctorsdashboard';
+          route = '/dashboard/doctor';
           break;
         case 'nurse':
-          route = '/nursedashboard';
+          route = '/dashboard/nurse';
           break;
         case 'admin':
-          route = '/adminsdashboard';
+          route = '/dashboard/admin';
           break;
         default:
-          route = '/patientsdashboard';
+          route = '/dashboard/patient';
       }
-      navigate(route);
-    } else {
-      setError(result.error);
+      navigate(route, { replace: true });
+
+    } catch (err) {
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -78,21 +98,13 @@ function Login() {
               <div><strong>Doctor:</strong> doctor@test.com / doctor123</div>
               <div><strong>Nurse:</strong> nurse@test.com / nurse123</div>
               <div><strong>Admin:</strong> admin@test.com / admin123</div>
+              <br/>
+              <div><em>Or use your real Supabase users with role in user_metadata!</em></div>
             </div>
           </div>
 
           {error && <div className="error-message">{error}</div>}
           <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Enter your name"
-              />
-            </div>
             <div className="form-group">
               <label>Email</label>
               <input
@@ -115,32 +127,6 @@ function Login() {
                 placeholder="Enter your password"
                 required
               />
-            </div>
-            <div className="form-group">
-              <label>License Number (Optional for test users)</label>
-              <input
-                type="text"
-                name="license"
-                value={formData.license}
-                onChange={handleChange}
-                placeholder="Enter license number"
-              />
-            </div>
-            <div className="form-group">
-              <label>Specialty (Optional for test users)</label>
-              <select 
-                name="specialty" 
-                value={formData.specialty}
-                onChange={handleChange}
-              >
-                <option value="">Select Specialty</option>
-                <option value="general">General Medicine</option>
-                <option value="cardiology">Cardiology</option>
-                <option value="pediatrics">Pediatrics</option>
-                <option value="orthopedics">Orthopedics</option>
-                <option value="dermatology">Dermatology</option>
-                <option value="neurology">Neurology</option>
-              </select>
             </div>
 
             <button type="submit" className="btn-login-submit" disabled={loading}>
