@@ -159,3 +159,144 @@ export const getProfile = async (userId) => {
   }
 };
 
+// ===== APPOINTMENTS FUNCTIONS =====
+/**
+ * Fetch appointments for a user (patient or provider)
+ */
+export const fetchAppointments = async (userId, role = 'patient') => {
+  try {
+    console.log(`Fetching appointments for ${role}:`, userId);
+    
+    let query = supabase
+      .from('appointments')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (role === 'patient') {
+      query = query.eq('patient_id', userId);
+    } else {
+      query = query.eq('provider_id', userId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Fetch appointments error:', error);
+      throw error;
+    }
+
+    console.log(`${data?.length || 0} appointments fetched`);
+    return { success: true, data: data || [] };
+  } catch (error) {
+    console.error('Error fetching appointments:', error);
+    return { success: false, error, data: [] };
+  }
+};
+
+/**
+ * Create new appointment (called by patient)
+ */
+export const createAppointment = async (appointmentData) => {
+  try {
+    console.log('Creating appointment:', appointmentData);
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert([{
+        patient_id: appointmentData.patientId,
+        patient_name: appointmentData.patientName,
+        provider_id: appointmentData.providerId,
+        provider_name: appointmentData.providerName,
+        service: appointmentData.service,
+        date: appointmentData.date,
+        time: appointmentData.time,
+        notes: appointmentData.notes || null,
+        price: appointmentData.price,
+        type: appointmentData.type || 'home',
+        status: 'Pending',
+        payment_status: 'pending'
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Create appointment error:', error);
+      throw error;
+    }
+
+    console.log('Appointment created:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error creating appointment:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Update appointment (status, payment, etc.)
+ */
+export const updateAppointment = async (id, updates) => {
+  try {
+    console.log('Updating appointment', id, updates);
+
+    const { data, error } = await supabase
+      .from('appointments')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Update appointment error:', error);
+      throw error;
+    }
+
+    console.log('Appointment updated:', data);
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error updating appointment:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Cancel appointment (soft delete via status)
+ */
+export const cancelAppointment = async (id) => {
+  try {
+    console.log('Cancelling appointment:', id);
+    return await updateAppointment(id, { status: 'Cancelled' });
+  } catch (error) {
+    console.error('Error cancelling appointment:', error);
+    return { success: false, error };
+  }
+};
+
+/**
+ * Delete appointment (hard delete)
+ */
+export const deleteAppointment = async (id) => {
+  try {
+    console.log('Deleting appointment:', id);
+    const { data, error } = await supabase
+      .from('appointments')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Delete appointment error:', error);
+      throw error;
+    }
+
+    console.log('Appointment deleted');
+    return { success: true, data };
+  } catch (error) {
+    console.error('Error deleting appointment:', error);
+    return { success: false, error };
+  }
+};
+
+

@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
+import { fetchAppointments, createAppointment, updateAppointment, cancelAppointment } from '../supabaseClient';
 
 const AppContext = createContext();
 
@@ -9,7 +10,6 @@ const initialUsers = [
   { id: 3, name: 'Nurse Mike Brown', email: 'mike@example.com', phone: '+237 670000002', role: 'nurse', licenseNumber: 'RN-67890', password: 'password123', status: 'active', joinDate: '2023-08-20', experience: '7 years', specialization: 'Home Nursing, Wound Care', rating: 4.9, totalRatings: 32 },
   { id: 4, name: 'Admin User', email: 'admin@example.com', phone: '+237 670000003', role: 'admin', password: 'admin123', status: 'active', joinDate: '2023-01-01' },
   { id: 5, name: 'Dr. John Smith', email: 'john.smith@example.com', phone: '+237 670000004', role: 'doctor', specialty: 'Cardiology', licenseNumber: 'MD-54321', password: 'password123', status: 'active', joinDate: '2023-05-15', experience: '15 years', hospital: 'Heart Center Hospital', rating: 4.9, totalRatings: 78 },
-  // Test Credentials (for development/testing purposes)
   { id: 6, name: 'Test Doctor', email: 'doctor@test.com', phone: '+237 600000001', role: 'doctor', specialty: 'General Medicine', licenseNumber: 'TEST-MD-001', password: 'doctor123', status: 'active', joinDate: '2026-01-01', experience: '5 years', hospital: 'Test Hospital', rating: 4.5, totalRatings: 10 },
   { id: 7, name: 'Test Nurse', email: 'nurse@test.com', phone: '+237 600000002', role: 'nurse', licenseNumber: 'TEST-RN-001', password: 'nurse123', status: 'active', joinDate: '2026-01-01', experience: '5 years', specialization: 'General Nursing', rating: 4.5, totalRatings: 10 },
   { id: 8, name: 'Test Admin', email: 'admin@test.com', phone: '+237 600000003', role: 'admin', password: 'admin123', status: 'active', joinDate: '2026-01-01' },
@@ -20,7 +20,6 @@ const initialAppointments = [
   { id: 2, patientId: 1, patientName: 'John Doe', providerId: 3, providerName: 'Nurse Mike Brown', service: 'Nursing Care', date: '2026-02-18', time: '2:00 PM', status: 'Pending', payment_status: 'pending', type: 'home', notes: 'Wound dressing', price: 40 },
   { id: 3, patientId: 1, patientName: 'John Doe', providerId: 5, providerName: 'Dr. John Smith', service: 'Cardiology', date: '2026-02-20', time: '11:00 AM', status: 'Confirmed', payment_status: 'paid', type: 'home', notes: 'Heart checkup', price: 60 },
 ];
-
 
 const initialMedicalRecords = [
   { id: 1, patientId: 1, title: 'Annual Checkup', date: '2026-01-10', doctor: 'Dr. Sarah Johnson', type: 'Checkup', file: null, content: 'Patient is in good health. All vitals normal.' },
@@ -79,10 +78,8 @@ export function AppProvider({ children }) {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [appointments, setAppointments] = useState(() => {
-    const saved = localStorage.getItem('appointments');
-    return saved ? JSON.parse(saved) : initialAppointments;
-  });
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
 
   const [medicalRecords, setMedicalRecords] = useState(() => {
     const saved = localStorage.getItem('medicalRecords');
@@ -201,7 +198,7 @@ export function AppProvider({ children }) {
     );
   };
 
-  // Save to localStorage whenever data changes
+  // Save to localStorage whenever data changes (backup only)
   useEffect(() => {
     localStorage.setItem('users', JSON.stringify(users));
   }, [users]);
@@ -210,9 +207,43 @@ export function AppProvider({ children }) {
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
   }, [currentUser]);
 
+  // Fetch appointments from Supabase when user changes
+  const fetchUserAppointments = useCallback(async () => {
+    if (!currentUser?.id) return;
+
+    setAppointmentsLoading(true);
+    try {
+      // Map role - for now use 'patient', extend later for providers
+      const role = currentUser.role === 'doctor' || currentUser.role === 'nurse' ? currentUser.role : 'patient';
+      const { success, data } = await fetchAppointments(currentUser.id, role);
+
+      if (success) {
+        // Map Supabase fields to frontend format
+        const mappedAppointments = data.map(apt => ({
+          ...apt,
+          patientId: apt.patient_id,
+          providerId: apt.provider_id,
+        }));
+        setAppointments(mappedAppointments);
+      } else {
+        console.error('Failed to fetch appointments:', data);
+        // Fallback to local
+        const saved = localStorage.getItem('appointments');
+        if (saved) setAppointments(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      // Fallback
+      const saved = localStorage.getItem('appointments');
+      if (saved) setAppointments(JSON.parse(saved));
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
-    localStorage.setItem('appointments', JSON.stringify(appointments));
-  }, [appointments]);
+    fetchUserAppointments();
+  }, [fetchUserAppointments]);
 
   useEffect(() => {
     localStorage.setItem('medicalRecords', JSON.stringify(medicalRecords));
@@ -252,33 +283,69 @@ export function AppProvider({ children }) {
     localStorage.removeItem('currentUser');
   };
 
-  // Appointment functions
-  const addAppointment = (appointment) => {
-const newAppointment = { ...appointment, id: appointments.length + 1, status: 'Pending', payment_status: 'pending' };
+  // Supabase Appointment functions (async)
+  const addAppointment = async (appointmentData) => {
+    try {
+      // Map frontend to Supabase fields
+      const supabaseData = {
+        patientId: appointmentData.patientId,
+        patientName: appointmentData.patientName,
+        providerId: appointmentData.providerId,
+        providerName: appointmentData.providerName,
+        service: appointmentData.service,
+        date: appointmentData.date,
+        time: appointmentData.time,
+        notes: appointmentData.notes,
+        price: appointmentData.price,
+        type: appointmentData.type,
+      };
 
-    setAppointments([...appointments, newAppointment]);
-    
-    // Add notification
-    const newNotification = {
-      id: notifications.length + 1,
-      userId: appointment.providerId,
-      title: 'New Appointment Request',
-      message: `${appointment.patientName} requested an appointment for ${appointment.service}`,
-      time: 'Just now',
-      read: false,
-      type: 'appointment'
-    };
-    setNotifications([newNotification, ...notifications]);
-    
-    return newAppointment;
+      const { success, data } = await createAppointment(supabaseData);
+      if (success) {
+        // Map back and add to state
+        const newApt = {
+          ...data,
+          patientId: data.patient_id,
+          providerId: data.provider_id,
+        };
+        setAppointments(prev => [newApt, ...prev]);
+
+        // Add provider notification
+        addNotification({
+          userId: appointmentData.providerId,
+          title: 'New Appointment Request',
+          message: `${appointmentData.patientName} requested ${appointmentData.service}`,
+          type: 'appointment'
+        });
+
+        return newApt;
+      } else {
+        throw new Error('Failed to create appointment');
+      }
+    } catch (error) {
+      console.error('addAppointment error:', error);
+      throw error;
+    }
   };
 
-  const updateAppointment = (id, updates) => {
-    setAppointments(appointments.map(apt => apt.id === id ? { ...apt, ...updates } : apt));
+  const updateAppointment = async (id, updates) => {
+    try {
+      const { success, data } = await updateAppointment(id, updates);
+      if (success) {
+        setAppointments(prev => prev.map(apt => apt.id === id ? {
+          ...apt,
+          ...data
+        } : apt));
+      }
+      return success;
+    } catch (error) {
+      console.error('updateAppointment error:', error);
+      throw error;
+    }
   };
 
-  const cancelAppointment = (id) => {
-    setAppointments(appointments.map(apt => apt.id === id ? { ...apt, status: 'Cancelled' } : apt));
+  const cancelAppointment = async (id) => {
+    return await updateAppointment(id, { status: 'Cancelled' });
   };
 
   // Medical Records functions
@@ -416,6 +483,7 @@ const newAppointment = { ...appointment, id: appointments.length + 1, status: 'P
     
     // Appointments
     appointments,
+    appointmentsLoading,
     addAppointment,
     updateAppointment,
     cancelAppointment,
@@ -476,3 +544,4 @@ export function useApp() {
   }
   return context;
 }
+

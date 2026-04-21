@@ -68,19 +68,20 @@ function BookAppointment() {
         time: formData.time,
         notes: formData.notes,
         type: 'home',
-        price: servicePrices[formData.service] || 50,
-        payment_status: 'pending'
+        price: servicePrices[formData.service] || 50
       };
 
-      addAppointment(newAppointment);
+      await addAppointment(newAppointment);
       setSuccess(true);
       setTimeout(() => navigate('/dashboard/patient'), 2000);
     } catch (err) {
-      setError('Booking failed. Please try again.');
+      console.error('Booking error:', err);
+      setError(err.message || 'Booking failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (loading) {
     return <div className="loading">Loading...</div>;
