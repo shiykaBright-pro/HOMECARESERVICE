@@ -76,7 +76,9 @@ function BookAppointment() {
       setTimeout(() => navigate('/dashboard/patient'), 2000);
     } catch (err) {
       console.error('Booking error:', err);
-      setError(err.message || 'Booking failed. Please try again.');
+      const errorMessage = err.details || err.message || 'Booking failed. Please try again. Check console for details.';
+      setError(errorMessage);
+      console.error('Full Supabase error:', JSON.stringify(err, null, 2));
     } finally {
       setSubmitting(false);
     }

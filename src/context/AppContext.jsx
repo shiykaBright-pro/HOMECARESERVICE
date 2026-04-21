@@ -288,16 +288,18 @@ export function AppProvider({ children }) {
     try {
       // Map frontend to Supabase fields
       const supabaseData = {
-        patientId: appointmentData.patientId,
-        patientName: appointmentData.patientName,
-        providerId: appointmentData.providerId,
-        providerName: appointmentData.providerName,
+        patient_id: `patient-${appointmentData.patientId}`,
+        patient_name: appointmentData.patientName,
+        provider_id: `provider-${appointmentData.providerId}`,
+        provider_name: appointmentData.providerName,
         service: appointmentData.service,
         date: appointmentData.date,
         time: appointmentData.time,
-        notes: appointmentData.notes,
+        notes: appointmentData.notes || null,
         price: appointmentData.price,
         type: appointmentData.type,
+        status: 'Pending',
+        payment_status: 'pending'
       };
 
       const { success, data } = await createAppointment(supabaseData);

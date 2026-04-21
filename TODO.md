@@ -1,16 +1,36 @@
-# Supabase Appointments RLS Implementation
-## Status: 🚀 In Progress
+# Fix Supabase Appointments 400 Error - Progress Tracker
 
-## Steps:
-### 1. ✅ Create TODO.md 
-### 2. ✅ supabase-appointments-schema.sql created - Execute in Supabase Dashboard
-### 3. ✅ Added appointment CRUD to supabaseClient.js
-### 4. ✅ Updated AppContext.jsx with Supabase appointments (ignore TS errors - logic intact)
-### 5. ✅ Updated BookAppointment.jsx async submit
-### 6. Integrate Supabase auth in AppContext/App.jsx
-### 7. Update dashboards to refetch appointments
-### 8. Test booking flow end-to-end
-### 9. Migrate local data to Supabase
-### 10. ✅ Fixed AppContext.jsx syntax - Ready for testing!
-**Run:** Execute supabase-appointments-schema.sql → npm run dev → Test booking as patient
+## Current Status: 🚀 In Progress
 
+### ✅ Step 1: Review Approved Plan
+- [x] Diagnosis confirmed: UUID type mismatch (numbers vs UUID)
+- [x] User approved edits to AppContext.jsx and BookAppointment.jsx
+
+### ⬜ Step 2: Database Setup (Manual - User Action Required)
+- [ ] Copy content of `supabase-appointments-schema.sql` 
+- [ ] Paste into Supabase Dashboard → SQL Editor → Run
+- [ ] Verify: `appointments` table exists with correct columns/RLS
+
+### ✅ Step 3: Update AppContext.jsx
+- [x] Convert numeric IDs to UUID format
+- [x] Add status/payment_status defaults  
+- [x] Improve error propagation
+
+### ✅ Step 4: Update BookAppointment.jsx  
+- [x] Client-side validation
+- [x] Full Supabase error display (error.details)
+- [x] UX improvements
+
+### ⬜ Step 5: Test
+- [ ] `npm run dev`
+- [ ] Login as patient (john@example.com / password123)
+- [ ] Book appointment → Check console/Supabase table
+- [ ] Verify no 400 error
+
+### ⬜ Step 6: Cleanup
+- [ ] Update this TODO with test results
+- [ ] Mark complete
+
+**Next Action:** User runs SQL, then AI edits files.
+
+**Root Cause:** Frontend numeric IDs (1,2,3) sent to Supabase UUID columns → 400 error.
