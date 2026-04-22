@@ -109,15 +109,25 @@ export const saveProfile = async (userId, profileData) => {
   try {
     console.log("Saving profile for user:", userId, profileData);
 
+    // Validate and normalize role
+    const validRoles = ['admin', 'doctor', 'nurse', 'patient'];
+    const role = profileData.role?.trim().toLowerCase();
+    
+    console.log('Validating role before insert:', { raw: profileData.role, normalized: role });
+    
+    if (!role || !validRoles.includes(role)) {
+      throw new Error(`Invalid role: "${profileData.role}". Must be one of: ${validRoles.join(', ')}`);
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .upsert({
         id: userId,
-        name: profileData.name,
-        email: profileData.email,
-        role: profileData.role,
-        license: profileData.license || null,
-        specialty: profileData.specialty || null,
+        name: profileData.name?.trim() || 'Unknown',
+        email: profileData.email?.trim() || '',
+        role: role,  // Validated lowercase role
+        license: profileData.license?.trim() || null,
+        specialty: profileData.specialty?.trim() || null,
         updated_at: new Date().toISOString()
       });
 
@@ -126,14 +136,15 @@ export const saveProfile = async (userId, profileData) => {
       throw error;
     }
 
-    console.log("Profile saved successfully:", data);
+    console.log("✅ Profile saved successfully with role:", role, data);
     return { success: true, data };
 
   } catch (error) {
     console.error("Error saving profile:", error);
-    return { success: false, error };
+    return { success: false, error: error.message };
   }
 };
+
 
 export const getProfile = async (userId) => {
   try {

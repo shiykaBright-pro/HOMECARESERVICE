@@ -304,14 +304,19 @@ function Profile() {
 
               <div className="form-group">
                 <label htmlFor="role">Role</label>
-                <input
-                  type="text"
+                <select
                   id="role"
                   name="role"
-                  value={profileData.role}
-                  readOnly
-                  className="readonly-input"
-                />
+                  value={profileData.role.toLowerCase()}
+                  onChange={handleInputChange}
+                  className="role-select"
+                >
+                  <option value="">Select Role</option>
+                  <option value="patient">Patient</option>
+                  <option value="doctor">Doctor</option>
+                  <option value="nurse">Nurse</option>
+                  <option value="admin">Admin</option>
+                </select>
               </div>
             </div>
 
