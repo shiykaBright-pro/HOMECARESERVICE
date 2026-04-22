@@ -286,44 +286,61 @@ export function AppProvider({ children }) {
   // Supabase Appointment functions (async)
   const addAppointment = async (appointmentData) => {
     try {
-      // Map frontend to Supabase fields
+      // Validate required fields
+      if (
+        !appointmentData.patientId ||
+        !appointmentData.providerId ||
+        !appointmentData.service ||
+        !appointmentData.date ||
+        !appointmentData.time
+      ) {
+        throw new Error('Missing required fields');
+      }
+
+      // Validate UUIDs
+      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+      if (!uuidRegex.test(appointmentData.patientId) || !uuidRegex.test(appointmentData.providerId)) {
+        throw new Error('Invalid UUID for patient or provider');
+      }
+
+      // Prepare data for Supabase
       const supabaseData = {
-        patient_id: `patient-${appointmentData.patientId}`,
+        patient_id: appointmentData.patientId,
         patient_name: appointmentData.patientName,
-        provider_id: `provider-${appointmentData.providerId}`,
+        provider_id: appointmentData.providerId,
         provider_name: appointmentData.providerName,
         service: appointmentData.service,
-        date: appointmentData.date,
-        time: appointmentData.time,
+        date: appointmentData.date, // YYYY-MM-DD
+        time: appointmentData.time, // HH:MM or HH:MM:SS
         notes: appointmentData.notes || null,
-        price: appointmentData.price,
-        type: appointmentData.type,
+        price: Number(appointmentData.price),
+        type: appointmentData.type || 'home',
         status: 'Pending',
         payment_status: 'pending'
       };
 
-      const { success, data } = await createAppointment(supabaseData);
-      if (success) {
-        // Map back and add to state
-        const newApt = {
-          ...data,
-          patientId: data.patient_id,
-          providerId: data.provider_id,
-        };
-        setAppointments(prev => [newApt, ...prev]);
-
-        // Add provider notification
-        addNotification({
-          userId: appointmentData.providerId,
-          title: 'New Appointment Request',
-          message: `${appointmentData.patientName} requested ${appointmentData.service}`,
-          type: 'appointment'
-        });
-
-        return newApt;
-      } else {
-        throw new Error('Failed to create appointment');
+      console.log('Sending to Supabase:', supabaseData);
+      const { success, data, error } = await createAppointment(supabaseData);
+      if (!success) {
+        throw error;
       }
+      // Map back and add to state
+      const newApt = {
+        ...data,
+        patientId: data.patient_id,
+        providerId: data.provider_id,
+      };
+      setAppointments(prev => [newApt, ...prev]);
+
+      // Add provider notification
+      addNotification({
+        userId: appointmentData.providerId,
+        title: 'New Appointment Request',
+        message: `${appointmentData.patientName} requested ${appointmentData.service}`,
+        type: 'appointment'
+      });
+
+      return newApt;
     } catch (error) {
       console.error('addAppointment error:', error);
       throw error;

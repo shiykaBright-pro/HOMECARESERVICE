@@ -57,11 +57,11 @@ function BookAppointment() {
     setError('');
 
     try {
-      const provider = providers.find(u => u.id === parseInt(formData.providerId));
+      const provider = providers.find(u => u.id === formData.providerId);
       const newAppointment = {
         patientId: currentUser.id,
         patientName: currentUser.name,
-        providerId: parseInt(formData.providerId),
+        providerId: formData.providerId,
         providerName: provider?.name || 'To be assigned',
         service: formData.service,
         date: formData.date,
@@ -75,9 +75,7 @@ function BookAppointment() {
       setSuccess(true);
       setTimeout(() => navigate('/dashboard/patient'), 2000);
     } catch (err) {
-      console.error('Booking error:', err);
-      const errorMessage = err.details || err.message || 'Booking failed. Please try again. Check console for details.';
-      setError(errorMessage);
+      setError(err.message || JSON.stringify(err, null, 2));
       console.error('Full Supabase error:', JSON.stringify(err, null, 2));
     } finally {
       setSubmitting(false);
