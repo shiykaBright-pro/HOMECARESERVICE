@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './Dashboard.css';
 
 function BookAppointment() {
-  const { currentUser, users, addAppointment } = useApp();
+  const { currentUser, providers, addAppointment } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [providers, setProviders] = useState([]);
@@ -29,14 +29,12 @@ function BookAppointment() {
   };
 
   useEffect(() => {
-    if (currentUser) {
-      const availableProviders = users.filter(u => u.role === 'doctor' || u.role === 'nurse');
-      setProviders(availableProviders);
-      setLoading(false);
-    } else {
+    if (!currentUser) {
       navigate('/login');
+      return;
     }
-  }, [currentUser, users, navigate]);
+    setLoading(false);
+  }, [currentUser, navigate]);
 
   const handleChange = (e) => {
     setFormData({

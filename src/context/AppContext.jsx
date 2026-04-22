@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase, getProfile } from '../supabaseClient';
 import { fetchAppointments, createAppointment, updateAppointment, cancelAppointment } from '../supabaseClient';
 
 const AppContext = createContext();
@@ -73,10 +73,41 @@ export function AppProvider({ children }) {
     return parsedUsers;
   });
 
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('currentUser');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [currentUser, setCurrentUser] = useState(null);
+  const [providers, setProviders] = useState([]);
+
+  // On mount, get Supabase Auth user and profile
+  useEffect(() => {
+    const fetchAuthUser = async () => {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (user) {
+        // Fetch profile from DB
+        const { data: profile } = await getProfile(user.id);
+        setCurrentUser({
+          id: user.id,
+          email: user.email,
+          name: profile?.name || user.user_metadata?.name || '',
+          role: profile?.role || '',
+          licenseNumber: profile?.license || '',
+          specialty: profile?.specialty || ''
+        });
+      } else {
+        setCurrentUser(null);
+      }
+    };
+    fetchAuthUser();
+  }, []);
+
+  // Fetch providers from Supabase
+  const fetchProviders = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, name, role, specialty, license')
+      .in('role', ['doctor', 'nurse']);
+    if (!error && data) setProviders(data);
+  }, []);
+
+  useEffect(() => { fetchProviders(); }, [fetchProviders]);
 
   const [appointments, setAppointments] = useState([]);
   const [appointmentsLoading, setAppointmentsLoading] = useState(false);
@@ -174,47 +205,48 @@ export function AppProvider({ children }) {
       isAudioEnabled: true,
       isVideoEnabled: true,
       callStartTime: null,
-      callType: null
-    });
-  };
-
-  const toggleAudio = () => {
-    setVideoCallState(prev => ({
-      ...prev,
-      isAudioEnabled: !prev.isAudioEnabled
-    }));
-  };
-
-  const toggleVideo = () => {
-    setVideoCallState(prev => ({
-      ...prev,
-      isVideoEnabled: !prev.isVideoEnabled
-    }));
-  };
-
-  const getVideoCallHistory = (userId) => {
-    return videoCallHistory.filter(
-      call => call.callerId === userId || call.receiverId === userId
-    );
-  };
-
-  // Save to localStorage whenever data changes (backup only)
-  useEffect(() => {
-    localStorage.setItem('users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-  }, [currentUser]);
-
-  // Fetch appointments from Supabase when user changes
-  const fetchUserAppointments = useCallback(async () => {
-    if (!currentUser?.id) return;
-
-    setAppointmentsLoading(true);
-    try {
-      // Map role - for now use 'patient', extend later for providers
-      const role = currentUser.role === 'doctor' || currentUser.role === 'nurse' ? currentUser.role : 'patient';
+      return (
+        <AppContext.Provider
+          value={{
+            users,
+            setUsers,
+            currentUser,
+            setCurrentUser,
+            providers,
+            appointments,
+            setAppointments,
+            appointmentsLoading,
+            setAppointmentsLoading,
+            medicalRecords,
+            setMedicalRecords,
+            prescriptions,
+            setPrescriptions,
+            notifications,
+            setNotifications,
+            messages,
+            setMessages,
+            reviews,
+            setReviews,
+            videoCallState,
+            setVideoCallState,
+            videoCallHistory,
+            setVideoCallHistory,
+            startVideoCall,
+            endVideoCall,
+            login,
+            logout,
+            addAppointment,
+            updateAppointment,
+            cancelAppointment,
+            fetchUserAppointments,
+            filterAppointments,
+            getVideoCallHistory,
+            addNotification
+          }}
+        >
+          {children}
+        </AppContext.Provider>
+      );
       const { success, data } = await fetchAppointments(currentUser.id, role);
 
       if (success) {
