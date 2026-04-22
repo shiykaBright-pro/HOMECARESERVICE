@@ -127,8 +127,7 @@ export const saveProfile = async (userId, profileData) => {
         email: profileData.email?.trim() || '',
         role: role,  // Validated lowercase role
         license: profileData.license?.trim() || null,
-        specialty: profileData.specialty?.trim() || null,
-        updated_at: new Date().toISOString()
+        specialty: profileData.specialty?.trim() || null
       });
 
     if (error) {
@@ -284,7 +283,6 @@ export const updateAppointment = async (id, updates) => {
       .from('appointments')
       .update({
         ...updates,
-        updated_at: new Date().toISOString()
       })
       .eq('id', id)
       .select()

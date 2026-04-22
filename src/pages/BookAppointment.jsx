@@ -113,7 +113,7 @@ function BookAppointment() {
                   <label>Provider *</label>
                   <select name="providerId" value={formData.providerId} onChange={handleChange} required>
                     <option value="">Select Provider</option>
-                    {providers.map(provider => (
+{(providers || []).map(provider => (
                       <option key={provider.id} value={provider.id}>
                         {provider.name} ({provider.role === 'doctor' ? provider.specialty : 'Nurse'})
                       </option>
