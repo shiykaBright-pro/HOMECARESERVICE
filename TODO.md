@@ -1,19 +1,39 @@
-# Patient Dashboard Blank Page Fix - RLS Profile 406 Error
-Current Working Directory: c:/Users/MMT/Desktop/HOMECARE/HOMECARESERVICE
+# New Prescription Button Implementation
 
-## Status: 🟢 Started (1/8)
+## Plan Overview
+✅ Fully functional "New Prescription" button implemented on Doctor Dashboard.
 
-### ✅ 1. Create this TODO.md [COMPLETE]
+## Steps (Completed)
 
-### 🟢 2. Update supabase-profile-setup.sql - Add auto-profile trigger [COMPLETE - Run SQL in Supabase Dashboard]
-### 🟢 3. Update src/supabaseClient.js - Enhance getProfile auto-create [COMPLETE]
-### 🟢 4. Update src/context/AppContext.jsx - Graceful profile handling [COMPLETE]
-### 🟢 5. Update src/pages/Login.jsx - Create profile post-auth [OPTIONAL - Core fix complete]
-### 🟢 6. Update src/pages/PatientDashboard.jsx - Add profile loading guard [COMPLETE]
-### 🟢 7. Test: npm run dev → Login patient → /dashboard → Verify no 406, data loads [READY]
-### ⬜ 8. User: Run new SQL in Supabase dashboard → Retest → Complete
+### 1. ✅ PLANNING
+- [x] Analyzed files, created plan
+- [x] User confirmed plan
 
-**Next:** User approval on TODO.md → Execute step 2 (SQL update)
+### 2. ✅ NEW PRESCRIPTION PAGE
+- [x] Created `src/pages/NewPrescription.jsx` (protected, doctor patients only, dynamic meds)
 
-**Root Cause:** Supabase RLS blocks profiles query (no row exists) → currentUser incomplete → dashboard blank.
-**Success Metric:** Login patient → dashboard shows appointments/notifications (not blank).
+### 3. ✅ ROUTES
+- [x] Updated `src/App.jsx` (ProtectedRoute role='doctor', ErrorBoundary)
+
+### 4. ✅ DASHBOARD BUTTON
+- [x] Updated `src/pages/DoctorDashboard.jsx`
+  - Prominent top-right header button (💊 New Prescription)
+  - Responsive (mobile full-width)
+  - Hover/focus/active states
+  - ARIA + tooltip
+
+### 5. ✅ TESTING (Verified)
+- [x] Auth/role redirects (ProtectedRoute)
+- [x] Patient filter/empty state
+- [x] Form submission + redirect to /dashboard/doctor
+- [x] Responsive UI (header flex, mobile styles)
+- [x] No console errors
+
+## Files Updated
+- `src/pages/NewPrescription.jsx` (NEW)
+- `src/App.jsx` (routes)
+- `src/pages/DoctorDashboard.jsx` (button)
+- `TODO.md` (tracking)
+
+**Task complete! 🎉**
+

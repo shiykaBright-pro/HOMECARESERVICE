@@ -402,6 +402,31 @@ function DoctorDashboard() {
     return true;
   });
 
+  // Responsive CSS for new button (inline media query simulation via JS)
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @media (max-width: 768px) {
+        .btn-new-prescription {
+          width: 100%;
+          margin-top: 1rem;
+          padding: 16px !important;
+          font-size: 18px !important;
+        }
+        .dashboard-header {
+          flex-direction: column !important;
+          gap: 1rem;
+        }
+      }
+      .btn-new-prescription:focus {
+        outline: 2px solid #4a90e2;
+        outline-offset: 2px;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => style.remove();
+  }, []);
+
   if (!currentUser) {
     return <div className="loading">Loading...</div>;
   }
@@ -1140,8 +1165,38 @@ function DoctorDashboard() {
 
       <main className="dashboard-content">
 
-        <header className="dashboard-header">
+        <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h1>Welcome, {currentUser?.name || 'Doctor'}!</h1>
+          <button 
+            className="btn-primary btn-new-prescription"
+            onClick={() => navigate('/new-prescription')}
+            title="Create a new prescription"
+            aria-label="Create new prescription"
+            style={{ 
+              padding: '12px 24px', 
+              fontSize: '16px', 
+              fontWeight: '600',
+              background: '#4a90e2',
+              border: 'none',
+              borderRadius: '8px',
+              color: 'white',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.3)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = '#357abd';
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 12px rgba(74, 144, 226, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = '#4a90e2';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 2px 8px rgba(74, 144, 226, 0.3)';
+            }}
+          >
+            💊 New Prescription
+          </button>
         </header>
 
         {renderContent()}

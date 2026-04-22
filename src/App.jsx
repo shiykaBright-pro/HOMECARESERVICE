@@ -17,7 +17,9 @@ import VideoCall from './components/VideoCall';
 import Payment from './pages/Payment';
 import BookAppointment from './pages/BookAppointment';
 import Emergency from './pages/Emergency';
-import ErrorBoundary from './components/ErrorBoundary'; 
+import ErrorBoundary from './components/ErrorBoundary';
+import NewPrescription from './pages/NewPrescription';
+import ProtectedRoute from './components/ProtectedRoute'; 
 
 function App() {
   return (
@@ -42,6 +44,13 @@ function App() {
           <Route path="/reviews" element={<Reviews />} />
           <Route path="/video-call/:id" element={<VideoCall />} />
           <Route path="/book-appointment" element={<BookAppointment />} />
+          <Route path="/new-prescription" element={
+            <ProtectedRoute allowedRoles={['doctor']}>
+              <ErrorBoundary>
+                <NewPrescription />
+              </ErrorBoundary>
+            </ProtectedRoute>
+          } />
           <Route path="/emergency" element={<Emergency />} />
         </Routes> 
 
