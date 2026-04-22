@@ -156,7 +156,37 @@ export const getProfile = async (userId) => {
       .eq('id', userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+    if (error && error.code === 'PGRST116') {
+      // Profile not found - auto-create minimal profile
+      console.log("Profile not found, auto-creating...");
+      const createResult = await saveProfile(userId, {
+        email: userId + '@fallback.com', // Minimal required
+        role: 'patient',
+        name: 'Patient User'
+      });
+      
+      if (!createResult.success) {
+        console.error("Auto-create failed:", createResult.error);
+        return { success: false, data: null, error: 'Profile fetch failed' };
+      }
+
+      // Retry fetch after create
+      const { data: retryData, error: retryError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (retryError) {
+        console.error("Retry fetch failed:", retryError);
+        return { success: false, data: null, error: retryError };
+      }
+
+      console.log("Auto-created profile fetched:", retryData);
+      return { success: true, data: retryData };
+    }
+
+    if (error) {
       console.error("Profile fetch error:", error);
       throw error;
     }

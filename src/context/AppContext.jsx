@@ -81,16 +81,30 @@ export function AppProvider({ children }) {
     const fetchAuthUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (user) {
-        // Fetch profile from DB
-        const { data: profile } = await getProfile(user.id);
-        setCurrentUser({
-          id: user.id,
-          email: user.email,
-          name: profile?.name || user.user_metadata?.name || '',
-          role: profile?.role || '',
-          licenseNumber: profile?.license || '',
-          specialty: profile?.specialty || ''
-        });
+        // Fetch profile from DB (now handles auto-create)
+        const profileResult = await getProfile(user.id);
+        if (profileResult.success && profileResult.data) {
+          setCurrentUser({
+            id: user.id,
+            email: user.email,
+            name: profileResult.data.name || user.user_metadata?.name || user.email.split('@')[0],
+            role: profileResult.data.role || 'patient',
+            licenseNumber: profileResult.data.license || '',
+            specialty: profileResult.data.specialty || '',
+            ...profileResult.data
+          });
+        } else {
+          console.warn('Profile fetch failed, using auth fallback:', profileResult.error);
+          // Fallback to auth data only
+          setCurrentUser({
+            id: user.id,
+            email: user.email,
+            name: user.user_metadata?.name || user.email.split('@')[0],
+            role: 'patient', // Default for missing profile
+            licenseNumber: '',
+            specialty: ''
+          });
+        }
       } else {
         setCurrentUser(null);
       }

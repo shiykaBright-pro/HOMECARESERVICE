@@ -189,8 +189,8 @@ const handleViewPrescription = (prescription) => {
     return true;
   });
 
-  if (!currentUser) {
-    return <div className="loading">Loading...</div>;
+  if (!currentUser || !currentUser.id) {
+    return <div className="loading">Loading profile...</div>;
   }
 
   const renderContent = () => {

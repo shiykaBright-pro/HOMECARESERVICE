@@ -32,6 +32,7 @@ function App() {
 <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
 
+          <Route path="/dashboard/" element={<PatientDashboard />} />
           <Route path="/dashboard/patient" element={<PatientDashboard />} />
           <Route path="/dashboard/patient/payment" element={<Payment />} />
           <Route path="/dashboard/doctor" element={<ErrorBoundary><DoctorDashboard /></ErrorBoundary>} />
