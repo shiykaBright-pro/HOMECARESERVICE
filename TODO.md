@@ -6,10 +6,11 @@
 - [x] Diagnosis confirmed: UUID type mismatch (numbers vs UUID)
 - [x] User approved edits to AppContext.jsx and BookAppointment.jsx
 
-### ⬜ Step 2: Database Setup (Manual - User Action Required)
-- [ ] Copy content of `supabase-appointments-schema.sql` 
-- [ ] Paste into Supabase Dashboard → SQL Editor → Run
-- [ ] Verify: `appointments` table exists with correct columns/RLS
+### ✅ Step 2: Database Setup (Updated - CRITICAL FIX)
+- [x] Create `supabase-rls-policies-fixed.sql` ✅
+- [x] **RUN THIS FIRST**: Copy `supabase-rls-policies-fixed.sql` → Supabase SQL Editor → Run
+  **Fixes broken policies referencing doctor_id/nurse_id (non-existent)**
+- [ ] Verify: Table + policies correct (`pg_policies` query)
 
 ### ✅ Step 3: Update AppContext.jsx
 - [x] Convert numeric IDs to UUID format
