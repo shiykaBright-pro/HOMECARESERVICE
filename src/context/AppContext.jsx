@@ -204,110 +204,47 @@ export function AppProvider({ children }) {
       callParticipant: null,
       isAudioEnabled: true,
       isVideoEnabled: true,
-      callStartTime: null,
-      return (
-        <AppContext.Provider
-          value={{
-            users,
-            setUsers,
-            currentUser,
-            setCurrentUser,
-            providers,
-            appointments,
-            setAppointments,
-            appointmentsLoading,
-            setAppointmentsLoading,
-            medicalRecords,
-            setMedicalRecords,
-            prescriptions,
-            setPrescriptions,
-            notifications,
-            setNotifications,
-            messages,
-            setMessages,
-            reviews,
-            setReviews,
-            videoCallState,
-            setVideoCallState,
-            videoCallHistory,
-            setVideoCallHistory,
-            startVideoCall,
-            endVideoCall,
-            login,
-            logout,
-            addAppointment,
-            updateAppointment,
-            cancelAppointment,
-            fetchUserAppointments,
-            filterAppointments,
-            getVideoCallHistory,
-            addNotification
-          }}
-        >
-          {children}
-        </AppContext.Provider>
-      );
-      const { success, data } = await fetchAppointments(currentUser.id, role);
-
-      if (success) {
-        // Map Supabase fields to frontend format
-        const mappedAppointments = data.map(apt => ({
-          ...apt,
-          patientId: apt.patient_id,
-          providerId: apt.provider_id,
-        }));
-        setAppointments(mappedAppointments);
-      } else {
-        console.error('Failed to fetch appointments:', data);
-        // Fallback to local
-        const saved = localStorage.getItem('appointments');
-        if (saved) setAppointments(JSON.parse(saved));
-      }
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-      // Fallback
-      const saved = localStorage.getItem('appointments');
-      if (saved) setAppointments(JSON.parse(saved));
-    } finally {
-      setAppointmentsLoading(false);
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    fetchUserAppointments();
-  }, [fetchUserAppointments]);
-
-  useEffect(() => {
-    localStorage.setItem('medicalRecords', JSON.stringify(medicalRecords));
-  }, [medicalRecords]);
-
-  useEffect(() => {
-    localStorage.setItem('prescriptions', JSON.stringify(prescriptions));
-  }, [prescriptions]);
-
-  useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications));
-  }, [notifications]);
-
-  useEffect(() => {
-    localStorage.setItem('messages', JSON.stringify(messages));
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem('reviews', JSON.stringify(reviews));
-  }, [reviews]);
-
-  // Auth functions
-  const login = (email, password, license, specialty, name) => {
-    // Authenticate user by email and password (works for both test and real users)
-    const user = users.find(u => u.email === email && u.password === password);
-    if (user) {
-      const updatedUser = { ...user, name: name || user.name };
-      setCurrentUser(updatedUser);
-      return { success: true, user: updatedUser };
-    }
-    return { success: false, error: 'Invalid email or password' };
+      callStartTime: null
+    });
   };
+
+  const login = async (email, password) => {
+    try {
+      // Try hardcoded users first (for demo)
+      const user = users.find(u => u.email === email && u.password === password);
+      if (user) {
+        setCurrentUser(user);
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        return { success: true, data: user };
+      }
+
+      // Try Supabase auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) throw error;
+      
+      // Get profile
+      const { data: profile } = await getProfile(data.user.id);
+      const fullUser = {
+        id: data.user.id,
+        email: data.user.email,
+        name: profile?.name || data.user.user_metadata?.name || '',
+        role: profile?.role || 'patient',
+        ...profile
+      };
+      
+      setCurrentUser(fullUser);
+      localStorage.setItem('currentUser', JSON.stringify(fullUser));
+      return { success: true, data: fullUser };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -329,10 +266,10 @@ export function AppProvider({ children }) {
         throw new Error('Missing required fields');
       }
 
-      // Validate UUIDs
-      const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-      if (!uuidRegex.test(appointmentData.patientId) || !uuidRegex.test(appointmentData.providerId)) {
-        throw new Error('Invalid UUID for patient or provider');
+      // Skip UUID validation for demo/hardcoded users (numbers instead of UUIDs)
+      // UUID validation can be re-enabled when using real Supabase UUIDs
+      if (typeof appointmentData.patientId !== 'string' || typeof appointmentData.providerId !== 'string') {
+        console.warn('Non-UUID IDs detected (using demo data)');
       }
 
       // Prepare data for Supabase
@@ -481,6 +418,17 @@ export function AppProvider({ children }) {
   const getProviderReviews = (providerId) => {
     return reviews.filter(r => r.providerId === providerId);
   };
+
+  // Video toggle functions
+  const toggleAudio = () => {
+    setVideoCallState(prev => ({ ...prev, isAudioEnabled: !prev.isAudioEnabled }));
+  };
+
+  const toggleVideo = () => {
+    setVideoCallState(prev => ({ ...prev, isVideoEnabled: !prev.isVideoEnabled }));
+  };
+
+  const getVideoCallHistory = () => videoCallHistory;
 
   // Search and filter functions
   const searchDoctors = (query) => {

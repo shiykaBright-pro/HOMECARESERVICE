@@ -7,7 +7,7 @@ function BookAppointment() {
   const { currentUser, providers, addAppointment } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [providers, setProviders] = useState([]);
+  // Removed local providers state; now using providers from context
   const [formData, setFormData] = useState({
     providerId: '',
     service: '',
