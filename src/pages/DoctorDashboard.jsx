@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../supabaseClient';
 import './Dashboard.css';
 
 function DoctorDashboard() {
   const navigate = useNavigate();
-  const { currentUser, users, appointments, medicalRecords, prescriptions, notifications, messages, sendMessage, getConversation, updateAppointment, addPrescription, deletePrescription, addMedicalRecord, logout } = useApp();
+  const { currentUser, setCurrentUser, users, appointments, medicalRecords, prescriptions, notifications, messages, sendMessage, getConversation, updateAppointment, addPrescription, deletePrescription, addMedicalRecord, logout } = useApp();
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -17,6 +18,10 @@ function DoctorDashboard() {
   const [chatMessage, setChatMessage] = useState('');
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({});
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
 
   const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
   
@@ -87,18 +92,115 @@ function DoctorDashboard() {
         case 'nurse': navigate('/dashboard/nurse'); break;
         case 'admin': navigate('/dashboard/admin'); break;
       }
-    } else {
-      setProfileForm({
-        name: currentUser.name || '',
-        email: currentUser.email || '',
-        phone: currentUser.phone || '',
-        specialty: currentUser.specialty || '',
-        licenseNumber: currentUser.licenseNumber || '',
-        experience: currentUser.experience || '',
-        hospital: currentUser.hospital || ''
-      });
     }
   }, [currentUser, navigate]);
+
+  // Load profile data from Supabase or fallback to currentUser
+  useEffect(() => {
+    if (!currentUser) return;
+    const loadProfile = async () => {
+      try {
+        setProfileLoading(true);
+        setProfileError('');
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          setProfileForm({
+            name: currentUser.name || '',
+            email: currentUser.email || '',
+            phone: currentUser.phone || '',
+            specialty: currentUser.specialty || '',
+            licenseNumber: currentUser.licenseNumber || '',
+            experience: currentUser.experience || '',
+            hospital: currentUser.hospital || ''
+          });
+          setProfileLoading(false);
+          return;
+        }
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.warn('Error fetching profile:', profileError);
+        }
+        setProfileForm({
+          name: profile?.name || currentUser.name || '',
+          email: currentUser.email || '',
+          phone: currentUser.phone || '',
+          specialty: profile?.specialty || currentUser.specialty || '',
+          licenseNumber: profile?.license || currentUser.licenseNumber || '',
+          experience: currentUser.experience || '',
+          hospital: currentUser.hospital || ''
+        });
+      } catch (err) {
+        console.error('Error loading profile:', err);
+        setProfileError('Failed to load profile data');
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    loadProfile();
+  }, [currentUser]);
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    if (!profileForm.name.trim()) {
+      setProfileError('Name is required');
+      return;
+    }
+    if (!profileForm.licenseNumber.trim()) {
+      setProfileError('License number is required');
+      return;
+    }
+    if (!profileForm.specialty.trim()) {
+      setProfileError('Specialty is required');
+      return;
+    }
+    try {
+      setProfileSaving(true);
+      setProfileError('');
+      setProfileSuccess('');
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (!authError && user) {
+        const { error: upsertError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: user.id,
+            name: profileForm.name.trim(),
+            email: currentUser.email,
+            role: currentUser.role,
+            license: profileForm.licenseNumber.trim() || null,
+            specialty: profileForm.specialty.trim() || null
+          });
+        if (upsertError) {
+          console.error('Supabase upsert error:', upsertError);
+          setProfileError(`Database error: ${upsertError.message}`);
+          setProfileSaving(false);
+          return;
+        }
+      }
+      const updatedUser = {
+        ...currentUser,
+        name: profileForm.name.trim(),
+        phone: profileForm.phone.trim(),
+        specialty: profileForm.specialty.trim(),
+        licenseNumber: profileForm.licenseNumber.trim(),
+        experience: profileForm.experience.trim(),
+        hospital: profileForm.hospital.trim()
+      };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+      setProfileSuccess('Profile updated successfully!');
+      setEditingProfile(false);
+      setTimeout(() => setProfileSuccess(''), 3000);
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setProfileError(err.message || 'Failed to update profile');
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const handleViewAppointment = (apt) => {
     const patient = users.find(u => u.id === apt.patientId);
@@ -893,27 +995,31 @@ function DoctorDashboard() {
             </div>
             <div className="profile-info">
               <h3>Professional Information</h3>
-              {editingProfile ? (
-                <form onSubmit={(e) => { e.preventDefault(); setEditingProfile(false); alert('Profile updated!'); }}>
+              {profileError && <div className="error-message" style={{marginBottom: '1rem'}}>{profileError}</div>}
+              {profileSuccess && <div className="success-message" style={{marginBottom: '1rem'}}>{profileSuccess}</div>}
+              {profileLoading ? (
+                <div className="loading">Loading profile...</div>
+              ) : editingProfile ? (
+                <form onSubmit={handleProfileSubmit}>
                   <div className="info-row">
-                    <span className="info-label">Full Name</span>
-                    <input type="text" value={profileForm.name} onChange={(e) => setProfileForm({...profileForm, name: e.target.value})} />
+                    <span className="info-label">Full Name *</span>
+                    <input type="text" value={profileForm.name} onChange={(e) => setProfileForm({...profileForm, name: e.target.value})} required />
                   </div>
                   <div className="info-row">
                     <span className="info-label">Email</span>
-                    <input type="email" value={profileForm.email} onChange={(e) => setProfileForm({...profileForm, email: e.target.value})} />
+                    <input type="email" value={profileForm.email} readOnly style={{background: '#f5f5f5'}} />
                   </div>
                   <div className="info-row">
                     <span className="info-label">Phone</span>
                     <input type="tel" value={profileForm.phone} onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})} />
                   </div>
                   <div className="info-row">
-                    <span className="info-label">Specialty</span>
-                    <input type="text" value={profileForm.specialty} onChange={(e) => setProfileForm({...profileForm, specialty: e.target.value})} />
+                    <span className="info-label">Specialty *</span>
+                    <input type="text" value={profileForm.specialty} onChange={(e) => setProfileForm({...profileForm, specialty: e.target.value})} required />
                   </div>
                   <div className="info-row">
-                    <span className="info-label">License Number</span>
-                    <input type="text" value={profileForm.licenseNumber} onChange={(e) => setProfileForm({...profileForm, licenseNumber: e.target.value})} />
+                    <span className="info-label">License Number *</span>
+                    <input type="text" value={profileForm.licenseNumber} onChange={(e) => setProfileForm({...profileForm, licenseNumber: e.target.value})} required />
                   </div>
                   <div className="info-row">
                     <span className="info-label">Experience</span>
@@ -923,18 +1029,20 @@ function DoctorDashboard() {
                     <span className="info-label">Hospital</span>
                     <input type="text" value={profileForm.hospital} onChange={(e) => setProfileForm({...profileForm, hospital: e.target.value})} />
                   </div>
-                  <button type="submit" className="btn-edit" style={{marginTop: '1rem'}}>Save Profile</button>
-                  <button type="button" className="btn-cancel" style={{marginTop: '1rem', marginLeft: '0.5rem'}} onClick={() => setEditingProfile(false)}>Cancel</button>
+                  <button type="submit" className="btn-edit" style={{marginTop: '1rem'}} disabled={profileSaving}>
+                    {profileSaving ? 'Saving...' : 'Save Profile'}
+                  </button>
+                  <button type="button" className="btn-cancel" style={{marginTop: '1rem', marginLeft: '0.5rem'}} onClick={() => setEditingProfile(false)} disabled={profileSaving}>Cancel</button>
                 </form>
               ) : (
                 <>
                   <div className="info-row">
                     <span className="info-label">Full Name</span>
-                    <span className="info-value">{currentUser.name}</span>
+                    <span className="info-value">{currentUser.name || 'Not set'}</span>
                   </div>
                   <div className="info-row">
                     <span className="info-label">Specialty</span>
-                    <span className="info-value">{currentUser.specialty}</span>
+                    <span className="info-value">{currentUser.specialty || 'Not set'}</span>
                   </div>
                   <div className="info-row">
                     <span className="info-label">Email</span>
@@ -942,19 +1050,19 @@ function DoctorDashboard() {
                   </div>
                   <div className="info-row">
                     <span className="info-label">Phone</span>
-                    <span className="info-value">{currentUser.phone}</span>
+                    <span className="info-value">{currentUser.phone || 'Not set'}</span>
                   </div>
                   <div className="info-row">
                     <span className="info-label">License Number</span>
-                    <span className="info-value">{currentUser.licenseNumber}</span>
+                    <span className="info-value">{currentUser.licenseNumber || 'Not set'}</span>
                   </div>
                   <div className="info-row">
                     <span className="info-label">Experience</span>
-                    <span className="info-value">{currentUser.experience}</span>
+                    <span className="info-value">{currentUser.experience || 'Not set'}</span>
                   </div>
                   <div className="info-row">
                     <span className="info-label">Hospital Affiliation</span>
-                    <span className="info-value">{currentUser.hospital}</span>
+                    <span className="info-value">{currentUser.hospital || 'Not set'}</span>
                   </div>
                   <button className="btn-edit" style={{marginTop: '1rem'}} onClick={() => setEditingProfile(true)}>Edit Profile</button>
                 </>
@@ -1166,7 +1274,7 @@ function DoctorDashboard() {
       <main className="dashboard-content">
 
         <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1>Welcome, {currentUser?.name || 'Doctor'}!</h1>
+          <h1>Welcome, {currentUser?.name || 'User'}!</h1>
           <button 
             className="btn-primary btn-new-prescription"
             onClick={() => navigate('/new-prescription')}

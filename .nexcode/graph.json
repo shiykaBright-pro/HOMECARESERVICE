@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-24T14:45:16.886Z",
+  "generatedAt": "2026-04-24T22:07:21.376Z",
   "workspaceRoot": "HOMECARESERVICE",
   "stats": {
-    "filesIndexed": 65,
-    "edgesIndexed": 52
+    "filesIndexed": 70,
+    "edgesIndexed": 54
   },
   "nodes": [
     {
@@ -54,6 +54,22 @@
       "exports": []
     },
     {
+      "id": "PROVIDER-DROPDOWN-FIX-GUIDE.md",
+      "path": "PROVIDER-DROPDOWN-FIX-GUIDE.md",
+      "lang": "md",
+      "summary": "# Provider Dropdown Fix - Complete Setup Guide ## ✅ What Has Been Fixed ### 1. **AppContext.jsx Updates** - ✅ Added `providers` to context value export (was missing!) - ✅ Added comprehensive error logging to `fetchProviders()` - ✅ Added con",
+      "imports": [],
+      "exports": []
+    },
+    {
+      "id": "QUICK-FIX-CHECKLIST.md",
+      "path": "QUICK-FIX-CHECKLIST.md",
+      "lang": "md",
+      "summary": "# ⚡ Provider Dropdown - Quick Fix Checklist ## 🎯 What Was Done Your provider dropdown was empty because: 1. ❌ `providers` wasn't exported from AppContext 2. ❌ RLS policies blocked patients from viewing provider profiles 3. ❌ No error/loadi",
+      "imports": [],
+      "exports": []
+    },
+    {
       "id": "README.md",
       "path": "README.md",
       "lang": "md",
@@ -90,6 +106,14 @@
       "path": "supabase-profile-setup.sql",
       "lang": "sql",
       "summary": "-- Create profiles table for user profile management -- Run this SQL in your Supabase SQL Editor CREATE TABLE IF NOT EXISTS profiles ( id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY, name TEXT, email TEXT,",
+      "imports": [],
+      "exports": []
+    },
+    {
+      "id": "supabase-profiles-rls-fix.sql",
+      "path": "supabase-profiles-rls-fix.sql",
+      "lang": "sql",
+      "summary": "-- Fix RLS Policies for profiles table -- Allow patients and any authenticated user to view provider (doctor/nurse) profiles -- This enables the Provider dropdown to work on the booking page -- Step 1: Check if RLS is enabled (it should be)",
       "imports": [],
       "exports": []
     },
@@ -158,10 +182,26 @@
       "exports": []
     },
     {
+      "id": "TODO-PROFILE-UPDATE.md",
+      "path": "TODO-PROFILE-UPDATE.md",
+      "lang": "md",
+      "summary": "# Profile Update Task - TODO ## Task Update Doctor and Nurse Dashboard profile tabs to match Patient Profile functionality with Supabase backend integration. ## Plan ### Step 1: Update DoctorDashboard.jsx - [x] Add supabase import and setCu",
+      "imports": [],
+      "exports": []
+    },
+    {
       "id": "TODO-SUPABASE-LOGIN.md",
       "path": "TODO-SUPABASE-LOGIN.md",
       "lang": "md",
       "summary": "# Supabase Login Integration TODO ## Steps: - [x] Create src/supabaseClient.js ✅ - [x] 1. Update src/pages/Login.jsx: Import supabase, replace handleSubmit with supabase.auth.signInWithPassword logic ✅ - [ ] 2. Test login with Supabase test",
+      "imports": [],
+      "exports": []
+    },
+    {
+      "id": "TODO-WELCOME-MESSAGE.md",
+      "path": "TODO-WELCOME-MESSAGE.md",
+      "lang": "md",
+      "summary": "# TODO - Dynamic Welcome Message ## Steps 1. [x] Update `src/context/AppContext.jsx` to persist and restore user session across refreshes 2. [x] Update `src/pages/PatientDashboard.jsx` null-safety and fallback to 'User' 3. [x] Update `src/p",
       "imports": [],
       "exports": []
     },
@@ -459,11 +499,12 @@
       "id": "src/pages/DoctorDashboard.jsx",
       "path": "src/pages/DoctorDashboard.jsx",
       "lang": "jsx",
-      "summary": "import { useState, useEffect } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import './Dashboard.css'; function DoctorDashboard() { const navigate = useNavigate();",
+      "summary": "import { useState, useEffect } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import { supabase } from '../supabaseClient'; import './Dashboard.css'; function DoctorDashbo",
       "imports": [
         "react",
         "react-router-dom",
-        "../context/AppContext"
+        "../context/AppContext",
+        "../supabaseClient"
       ],
       "exports": []
     },
@@ -566,11 +607,12 @@
       "id": "src/pages/NurseDashboard.jsx",
       "path": "src/pages/NurseDashboard.jsx",
       "lang": "jsx",
-      "summary": "import { useState, useEffect } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import './Dashboard.css'; function NurseDashboard() { const navigate = useNavigate();",
+      "summary": "import { useState, useEffect } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import { supabase } from '../supabaseClient'; import './Dashboard.css'; function NurseDashboa",
       "imports": [
         "react",
         "react-router-dom",
-        "../context/AppContext"
+        "../context/AppContext",
+        "../supabaseClient"
       ],
       "exports": []
     },
@@ -836,6 +878,11 @@
       "type": "imports"
     },
     {
+      "from": "src/pages/DoctorDashboard.jsx",
+      "to": "src/supabaseClient.js",
+      "type": "imports"
+    },
+    {
       "from": "src/pages/Emergency.jsx",
       "to": "src/components/Navbar.jsx",
       "type": "imports"
@@ -878,6 +925,11 @@
     {
       "from": "src/pages/NurseDashboard.jsx",
       "to": "src/context/AppContext.jsx",
+      "type": "imports"
+    },
+    {
+      "from": "src/pages/NurseDashboard.jsx",
+      "to": "src/supabaseClient.js",
       "type": "imports"
     },
     {

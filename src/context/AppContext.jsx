@@ -73,21 +73,34 @@ export function AppProvider({ children }) {
     return parsedUsers;
   });
 
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('currentUser');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [providers, setProviders] = useState([]);
 
-  // On mount, get Supabase Auth user and profile
+  // On mount, get Supabase Auth user and profile, or restore local user
   useEffect(() => {
     const fetchAuthUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (user) {
         // Fetch profile from DB (now handles auto-create)
         const profileResult = await getProfile(user.id);
+        const resolvedName =
+          profileResult.data?.name ||
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split('@')[0] ||
+          'User';
         if (profileResult.success && profileResult.data) {
           setCurrentUser({
             id: user.id,
             email: user.email,
-            name: profileResult.data.name || user.user_metadata?.name || user.email.split('@')[0],
+            name: resolvedName,
             role: profileResult.data.role || 'patient',
             licenseNumber: profileResult.data.license || '',
             specialty: profileResult.data.specialty || '',
@@ -99,26 +112,83 @@ export function AppProvider({ children }) {
           setCurrentUser({
             id: user.id,
             email: user.email,
-            name: user.user_metadata?.name || user.email.split('@')[0],
+            name: resolvedName,
             role: 'patient', // Default for missing profile
             licenseNumber: '',
             specialty: ''
           });
         }
       } else {
-        setCurrentUser(null);
+        // No Supabase session: rely on localStorage fallback already set in state,
+        // but clear if it was a Supabase-only session that expired
+        const saved = localStorage.getItem('currentUser');
+        if (!saved) {
+          setCurrentUser(null);
+        }
       }
     };
     fetchAuthUser();
+
+    // Listen for auth state changes (login, logout, token refresh)
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profileResult = await getProfile(session.user.id);
+        const resolvedName =
+          profileResult.data?.name ||
+          session.user.user_metadata?.full_name ||
+          session.user.user_metadata?.name ||
+          session.user.email?.split('@')[0] ||
+          'User';
+        const fullUser = {
+          id: session.user.id,
+          email: session.user.email,
+          name: resolvedName,
+          role: profileResult.data?.role || 'patient',
+          licenseNumber: profileResult.data?.license || '',
+          specialty: profileResult.data?.specialty || '',
+          ...(profileResult.data || {})
+        };
+        setCurrentUser(fullUser);
+        localStorage.setItem('currentUser', JSON.stringify(fullUser));
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        localStorage.removeItem('currentUser');
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
   // Fetch providers from Supabase
   const fetchProviders = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, name, role, specialty, license')
-      .in('role', ['doctor', 'nurse']);
-    if (!error && data) setProviders(data);
+    try {
+      console.log('📊 Fetching providers from Supabase...');
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, name, role, specialty, license')
+        .in('role', ['doctor', 'nurse']);
+      
+      if (error) {
+        console.error('❌ Error fetching providers:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        setProviders([]);
+        return;
+      }
+      
+      if (!data) {
+        console.warn('⚠️ No data returned from provider fetch');
+        setProviders([]);
+        return;
+      }
+      
+      console.log(`✅ Successfully fetched ${data.length} providers:`, data);
+      setProviders(data);
+    } catch (err) {
+      console.error('💥 Exception during provider fetch:', err);
+      setProviders([]);
+    }
   }, []);
 
   useEffect(() => { fetchProviders(); }, [fetchProviders]);
@@ -493,6 +563,9 @@ export function AppProvider({ children }) {
     setCurrentUser,
     login,
     logout,
+    
+    // Providers
+    providers,
     
     // Appointments
     appointments,

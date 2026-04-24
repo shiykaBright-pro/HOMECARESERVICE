@@ -7,6 +7,8 @@ function BookAppointment() {
   const { currentUser, providers, addAppointment } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [providersLoading, setProvidersLoading] = useState(true);
+  const [providersError, setProvidersError] = useState('');
   // Removed local providers state; now using providers from context
   const [formData, setFormData] = useState({
     providerId: '',
@@ -33,8 +35,23 @@ function BookAppointment() {
       navigate('/login');
       return;
     }
+    
+    // Check providers loading status
+    if (providers && providers.length > 0) {
+      console.log('✅ Providers loaded:', providers);
+      setProvidersError('');
+      setProvidersLoading(false);
+    } else if (providers) {
+      console.warn('⚠️ Providers array is empty');
+      setProvidersError('No providers available');
+      setProvidersLoading(false);
+    } else {
+      console.log('⏳ Waiting for providers to load...');
+      setProvidersLoading(true);
+    }
+    
     setLoading(false);
-  }, [currentUser, navigate]);
+  }, [currentUser, providers, navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -111,14 +128,22 @@ function BookAppointment() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Provider *</label>
-                  <select name="providerId" value={formData.providerId} onChange={handleChange} required>
-                    <option value="">Select Provider</option>
-{(providers || []).map(provider => (
+                  <select name="providerId" value={formData.providerId} onChange={handleChange} required disabled={providersLoading || (providers && providers.length === 0)}>
+                    <option value="">
+                      {providersLoading ? '⏳ Loading providers...' : providers && providers.length > 0 ? 'Select Provider' : '❌ No providers available'}
+                    </option>
+                    {!providersLoading && providers && providers.length > 0 && (providers || []).map(provider => (
                       <option key={provider.id} value={provider.id}>
-                        {provider.name} ({provider.role === 'doctor' ? provider.specialty : 'Nurse'})
+                        {provider.name} {provider.role === 'doctor' ? `(Dr. - ${provider.specialty || 'General'})` : '(Nurse)'}
                       </option>
                     ))}
                   </select>
+                  {providersError && <div style={{color: '#dc2626', fontSize: '0.875rem', marginTop: '0.5rem'}}>⚠️ {providersError}</div>}
+                  {!providersLoading && providers && providers.length === 0 && (
+                    <div style={{color: '#ea580c', fontSize: '0.875rem', marginTop: '0.5rem'}}>
+                      No providers found. Check browser console for errors.
+                    </div>
+                  )}
                 </div>
                 <div className="form-group">
                   <label>Service Type *</label>

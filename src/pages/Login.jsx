@@ -107,6 +107,7 @@ function Login() {
           };
 
           setCurrentUser(user);
+          localStorage.setItem('currentUser', JSON.stringify(user));
           const dashboardMap = {
             patient: '/dashboard/patient',
             doctor: '/dashboard/doctor',
@@ -218,6 +219,7 @@ function Login() {
           };
 
           setCurrentUser(user);
+          localStorage.setItem('currentUser', JSON.stringify(user));
           // Navigate to appropriate dashboard based on role
           const dashboardMap = {
             patient: '/dashboard/patient',
@@ -268,6 +270,7 @@ function Login() {
         };
 
         setCurrentUser(user);
+        localStorage.setItem('currentUser', JSON.stringify(user));
         // Navigate to appropriate dashboard based on role
         const dashboardMap = {
           patient: '/dashboard/patient',
