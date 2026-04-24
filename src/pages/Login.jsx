@@ -292,21 +292,6 @@ function Login() {
         <div className="login-box">
           <h2>Login to HomeCare</h2>
           
-          {/* Test Credentials Info */}
-          <div style={{backgroundColor: '#f0f8ff', border: '1px solid #4a90e2', borderRadius: '5px', padding: '12px', marginBottom: '20px', fontSize: '13px'}}>
-            <strong>🧪 Test Credentials (Development Only):</strong>
-            <div style={{marginTop: '8px', lineHeight: '1.5'}}>
-              <div><strong>Doctor:</strong> doctor@test.com / doctor123</div>
-              <div><strong>Nurse:</strong> nurse@test.com / nurse123</div>
-              <div><strong>Admin:</strong> admin@test.com / admin123</div>
-            </div>
-            <div style={{marginTop: '10px'}}>
-              <button type="button" onClick={() => setFormData({...formData, email: 'doctor@test.com', password: 'doctor123'})} style={{marginRight: '5px', padding: '5px 10px', fontSize: '12px'}}>Fill Doctor</button>
-              <button type="button" onClick={() => setFormData({...formData, email: 'nurse@test.com', password: 'nurse123'})} style={{marginRight: '5px', padding: '5px 10px', fontSize: '12px'}}>Fill Nurse</button>
-              <button type="button" onClick={() => setFormData({...formData, email: 'admin@test.com', password: 'admin123'})} style={{padding: '5px 10px', fontSize: '12px'}}>Fill Admin</button>
-            </div>
-          </div>
-
           {error && <div className="error-message">{error}</div>}
           <form onSubmit={handleSubmit}>
             <div className="form-group">
