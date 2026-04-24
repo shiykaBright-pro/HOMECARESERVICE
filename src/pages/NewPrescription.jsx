@@ -53,12 +53,20 @@ function NewPrescription() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loading) return; // Prevent duplicates
+    console.log('SUBMIT CLICKED!');
+    
+    console.log('Form validation state:', {
+      loading,
+      hasPatients: doctorPatients.length > 0,
+      hasPatientId: !!formData.patientId,
+      hasValidMeds: formData.medications.some(med => med.name.trim())
+    });
+    
+    if (loading) return;
     
     console.log('=== NEW PRESCRIPTION FORM SUBMIT ===');
     console.log('Form data:', formData);
     console.log('Current user:', currentUser);
-    console.log('Supabase config:', { url: import.meta.env.VITE_SUPABASE_URL, hasKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY });
     
     setLoading(true);
     setError('');
@@ -66,47 +74,19 @@ function NewPrescription() {
     // Validation
     const validMeds = formData.medications.filter(med => med.name.trim());
     if (validMeds.length === 0) {
-      setError('At least one medication is required');
+      setError('At least one medication name is required');
       setLoading(false);
       return;
     }
-    if (!formData.patientId) {
-      setError('Please select a patient');
+    if (!formData.patientId || doctorPatients.find(p => p.id == formData.patientId) === undefined) {
+      setError('Please select a valid patient');
       setLoading(false);
       return;
     }
 
     try {
-      // Try Supabase insert first
-      console.log('Attempting Supabase insert...');
-      const supabaseData = {
-        patient_id: formData.patientId,
-        doctor_id: currentUser.id,
-        doctor_name: currentUser.name,
-        medications: validMeds, // JSON array
-        notes: formData.notes.trim() || null,
-        date: new Date().toISOString().split('T')[0],
-        status: 'Active'
-      };
+      console.log('Calling addPrescription from context...');
       
-      console.log('Supabase data payload:', supabaseData);
-      
-      const { data, error } = await supabase
-        .from('prescriptions')
-        .insert(supabaseData)
-        .select()
-        .single();
-      
-      console.log('Supabase response:', { data, error });
-      
-      if (error) {
-        console.error('Supabase insert failed:', error);
-        throw new Error(`Supabase error: ${error.message}`);
-      }
-      
-      console.log('✅ Supabase prescription created:', data);
-      
-      // Also update local context for UI sync
       await addPrescription({
         patientId: parseInt(formData.patientId),
         doctorId: currentUser.id,
@@ -115,11 +95,12 @@ function NewPrescription() {
         notes: formData.notes.trim()
       });
       
+      console.log('✅ addPrescription completed');
       setSuccess(true);
       setTimeout(() => navigate('/dashboard/doctor'), 2000);
       
     } catch (err) {
-      console.error('Full prescription error:', err);
+      console.error('addPrescription failed:', err);
       setError(`Failed to create prescription: ${err.message}`);
     } finally {
       setLoading(false);
@@ -265,11 +246,36 @@ function NewPrescription() {
   </div>
 )}
 
-            <div className="form-actions">
+            <div className="form-actions" style={{ display: 'flex', gap: '1rem', marginTop: '2rem', flexWrap: 'wrap' }}>
               <button 
                 type="submit" 
-                className="btn-submit"
-                disabled={loading || doctorPatients.length === 0 || !formData.patientId}
+                className="btn-submit btn-primary"
+                disabled={loading}
+                aria-label="Create prescription"
+                style={{
+                  flex: '1',
+                  minHeight: '44px',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  background: loading ? '#ccc' : '#4a90e2',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  boxShadow: '0 2px 8px rgba(74, 144, 226, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseOver={(e) => !loading && !e.currentTarget.disabled && (
+                  e.target.style.background = '#357abd',
+                  e.target.style.transform = 'translateY(-1px)',
+                  e.target.style.boxShadow = '0 4px 12px rgba(74, 144, 226, 0.4)'
+                )}
+                onMouseOut={(e) => (
+                  e.target.style.background = '#4a90e2',
+                  e.target.style.transform = 'translateY(0)',
+                  e.target.style.boxShadow = '0 2px 8px rgba(74, 144, 226, 0.3)'
+                )}
               >
                 {loading ? 'Creating...' : 'Create Prescription'}
               </button>
@@ -278,6 +284,17 @@ function NewPrescription() {
                 className="btn-cancel"
                 onClick={() => navigate('/dashboard/doctor')}
                 disabled={loading}
+                style={{
+                  minHeight: '44px',
+                  padding: '12px 24px',
+                  fontSize: '16px',
+                  background: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  flex: loading ? '1' : 'auto'
+                }}
               >
                 Cancel
               </button>
