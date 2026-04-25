@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, getProfile } from '../supabaseClient';
 import { fetchAppointments, createAppointment, updateAppointment, cancelAppointment } from '../supabaseClient';
 
 const AppContext = createContext();
+const IS_DEV = process.env.NODE_ENV === 'development';
 
 const initialUsers = [
   { id: 1, name: 'John Doe', email: 'john@example.com', phone: '+237 679109117', role: 'patient', password: 'password123', status: 'active', joinDate: '2026-01-15', bloodType: 'O+', allergies: 'None', dob: '1990-01-15', address: '123 Main Street, Buea, Cameroon', emergencyContact: { name: 'Jane Doe', phone: '+237 673233297', relation: 'Spouse' }, medicalHistory: [] },
@@ -55,21 +56,14 @@ export function AppProvider({ children }) {
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('users');
     let parsedUsers = saved ? JSON.parse(saved) : initialUsers;
-    
-    // Ensure test users are always present
     const testUserIds = [6, 7, 8];
     const testUsersInInitial = initialUsers.filter(u => testUserIds.includes(u.id));
-    
-    // Check if test users exist in saved data
     const hasAllTestUsers = testUserIds.every(id => parsedUsers.find(u => u.id === id));
-    
     if (!hasAllTestUsers) {
-      // Merge test users with existing users
       const mergedUsers = [...parsedUsers.filter(u => !testUserIds.includes(u.id)), ...testUsersInInitial];
       localStorage.setItem('users', JSON.stringify(mergedUsers));
       return mergedUsers;
     }
-    
     return parsedUsers;
   });
 
@@ -81,14 +75,63 @@ export function AppProvider({ children }) {
       return null;
     }
   });
-  const [providers, setProviders] = useState([]);
 
-  // On mount, get Supabase Auth user and profile, or restore local user
+  const [providers, setProviders] = useState([]);
+  const [providersFetched, setProvidersFetched] = useState(false);
+
+  const [appointments, setAppointments] = useState([]);
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [appointmentsFetched, setAppointmentsFetched] = useState(false);
+
+  const [medicalRecords, setMedicalRecords] = useState(() => {
+    const saved = localStorage.getItem('medicalRecords');
+    return saved ? JSON.parse(saved) : initialMedicalRecords;
+  });
+
+  const [prescriptions, setPrescriptions] = useState(() => {
+    const saved = localStorage.getItem('prescriptions');
+    return saved ? JSON.parse(saved) : initialPrescriptions;
+  });
+
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem('notifications');
+    return saved ? JSON.parse(saved) : initialNotifications;
+  });
+
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem('messages');
+    return saved ? JSON.parse(saved) : initialMessages;
+  });
+
+  const [reviews, setReviews] = useState(() => {
+    const saved = localStorage.getItem('reviews');
+    return saved ? JSON.parse(saved) : initialReviews;
+  });
+
+  const [videoCallState, setVideoCallState] = useState({
+    isInCall: false,
+    callParticipant: null,
+    isAudioEnabled: true,
+    isVideoEnabled: true,
+    callStartTime: null,
+    callType: null
+  });
+
+  const [videoCallHistory, setVideoCallHistory] = useState(() => {
+    const saved = localStorage.getItem('videoCalls');
+    return saved ? JSON.parse(saved) : initialVideoCalls;
+  });
+
+  const authInitialized = useRef(false);
+
+  // Auth state initialization and listener
   useEffect(() => {
-    const fetchAuthUser = async () => {
+    if (authInitialized.current) return;
+    authInitialized.current = true;
+
+    const initAuth = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (user) {
-        // Fetch profile from DB (now handles auto-create)
         const profileResult = await getProfile(user.id);
         const resolvedName =
           profileResult.data?.name ||
@@ -107,29 +150,20 @@ export function AppProvider({ children }) {
             ...profileResult.data
           });
         } else {
-          console.warn('Profile fetch failed, using auth fallback:', profileResult.error);
-          // Fallback to auth data only
+          if (IS_DEV) console.warn('Profile fetch failed, using auth fallback:', profileResult.error);
           setCurrentUser({
             id: user.id,
             email: user.email,
             name: resolvedName,
-            role: 'patient', // Default for missing profile
+            role: 'patient',
             licenseNumber: '',
             specialty: ''
           });
         }
-      } else {
-        // No Supabase session: rely on localStorage fallback already set in state,
-        // but clear if it was a Supabase-only session that expired
-        const saved = localStorage.getItem('currentUser');
-        if (!saved) {
-          setCurrentUser(null);
-        }
       }
     };
-    fetchAuthUser();
+    initAuth();
 
-    // Listen for auth state changes (login, logout, token refresh)
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         const profileResult = await getProfile(session.user.id);
@@ -164,77 +198,77 @@ export function AppProvider({ children }) {
   // Fetch providers from Supabase
   const fetchProviders = useCallback(async () => {
     try {
-      console.log('📊 Fetching providers from Supabase...');
+      if (IS_DEV) console.log('📊 Fetching providers from Supabase...');
       const { data, error } = await supabase
         .from('profiles')
         .select('id, name, role, specialty, license')
         .in('role', ['doctor', 'nurse']);
-      
+
       if (error) {
         console.error('❌ Error fetching providers:', error);
-        console.error('Error details:', JSON.stringify(error, null, 2));
         setProviders([]);
         return;
       }
-      
       if (!data) {
-        console.warn('⚠️ No data returned from provider fetch');
+        if (IS_DEV) console.warn('⚠️ No data returned from provider fetch');
         setProviders([]);
         return;
       }
-      
-      console.log(`✅ Successfully fetched ${data.length} providers:`, data);
+      if (IS_DEV) console.log(`✅ Successfully fetched ${data.length} providers`);
       setProviders(data);
+      setProvidersFetched(true);
     } catch (err) {
       console.error('💥 Exception during provider fetch:', err);
       setProviders([]);
     }
   }, []);
 
-  useEffect(() => { fetchProviders(); }, [fetchProviders]);
+  const refreshProviders = useCallback(async () => {
+    setProvidersFetched(false);
+    await fetchProviders();
+  }, [fetchProviders]);
 
-  const [appointments, setAppointments] = useState([]);
-  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  useEffect(() => {
+    if (!providersFetched) {
+      fetchProviders();
+    }
+  }, [fetchProviders, providersFetched]);
 
-  const [medicalRecords, setMedicalRecords] = useState(() => {
-    const saved = localStorage.getItem('medicalRecords');
-    return saved ? JSON.parse(saved) : initialMedicalRecords;
-  });
+  // Fetch appointments from Supabase
+  const refreshAppointments = useCallback(async () => {
+    if (!currentUser?.id) return;
+    try {
+      setAppointmentsLoading(true);
+      if (IS_DEV) console.time('fetchAppointments');
+      const role = currentUser.role === 'patient' ? 'patient' : 'provider';
+      const { success, data, error } = await fetchAppointments(currentUser.id, role);
+      if (IS_DEV) console.timeEnd('fetchAppointments');
+      if (success) {
+        const mapped = (data || []).map(apt => ({
+          ...apt,
+          patientId: apt.patient_id,
+          providerId: apt.provider_id,
+        }));
+        setAppointments(prev => {
+          const merged = [...mapped, ...prev.filter(p => typeof p.id === 'number')];
+          return merged;
+        });
+        setAppointmentsFetched(true);
+      } else {
+        console.error('Failed to fetch appointments:', error);
+      }
+    } catch (err) {
+      console.error('Error refreshing appointments:', err);
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  }, [currentUser?.id, currentUser?.role]);
 
-  const [prescriptions, setPrescriptions] = useState(() => {
-    const saved = localStorage.getItem('prescriptions');
-    return saved ? JSON.parse(saved) : initialPrescriptions;
-  });
-
-  const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem('notifications');
-    return saved ? JSON.parse(saved) : initialNotifications;
-  });
-
-  const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem('messages');
-    return saved ? JSON.parse(saved) : initialMessages;
-  });
-
-  const [reviews, setReviews] = useState(() => {
-    const saved = localStorage.getItem('reviews');
-    return saved ? JSON.parse(saved) : initialReviews;
-  });
-
-  // Video call state
-  const [videoCallState, setVideoCallState] = useState({
-    isInCall: false,
-    callParticipant: null,
-    isAudioEnabled: true,
-    isVideoEnabled: true,
-    callStartTime: null,
-    callType: null // 'incoming' or 'outgoing'
-  });
-
-  const [videoCallHistory, setVideoCallHistory] = useState(() => {
-    const saved = localStorage.getItem('videoCalls');
-    return saved ? JSON.parse(saved) : initialVideoCalls;
-  });
+  useEffect(() => {
+    if (currentUser?.id && !appointmentsFetched) {
+      refreshAppointments();
+    }
+  }, [currentUser?.id, appointmentsFetched, refreshAppointments]);
 
   // Save video call history to localStorage
   useEffect(() => {
@@ -242,7 +276,7 @@ export function AppProvider({ children }) {
   }, [videoCallHistory]);
 
   // Video call functions
-  const startVideoCall = (participant, callType = 'outgoing') => {
+  const startVideoCall = useCallback((participant, callType = 'outgoing') => {
     setVideoCallState({
       isInCall: true,
       callParticipant: participant,
@@ -251,50 +285,52 @@ export function AppProvider({ children }) {
       callStartTime: new Date().toISOString(),
       callType
     });
-    
-    // Add to call history
-    const newCall = {
-      id: videoCallHistory.length + 1,
-      callerId: callType === 'outgoing' ? currentUser?.id : participant.id,
-      callerName: callType === 'outgoing' ? currentUser?.name : participant.name,
-      receiverId: callType === 'outgoing' ? participant.id : currentUser?.id,
-      receiverName: callType === 'outgoing' ? participant.name : currentUser?.name,
-      status: 'ongoing',
-      startTime: new Date().toLocaleString(),
-      endTime: null
-    };
-    setVideoCallHistory([...videoCallHistory, newCall]);
-  };
 
-  const endVideoCall = () => {
-    if (videoCallState.callStartTime) {
-      // Update the call history with end time
-      const ongoingCall = videoCallHistory.find(
-        call => call.status === 'ongoing' && 
-        (call.callerId === currentUser?.id || call.receiverId === currentUser?.id)
-      );
-      
-      if (ongoingCall) {
-        setVideoCallHistory(videoCallHistory.map(call => 
-          call.id === ongoingCall.id 
-            ? { ...call, status: 'completed', endTime: new Date().toLocaleString() }
-            : call
-        ));
-      }
-    }
-    
-    setVideoCallState({
-      isInCall: false,
-      callParticipant: null,
-      isAudioEnabled: true,
-      isVideoEnabled: true,
-      callStartTime: null
+    setVideoCallHistory(prev => {
+      const newCall = {
+        id: prev.length + 1,
+        callerId: callType === 'outgoing' ? currentUser?.id : participant.id,
+        callerName: callType === 'outgoing' ? currentUser?.name : participant.name,
+        receiverId: callType === 'outgoing' ? participant.id : currentUser?.id,
+        receiverName: callType === 'outgoing' ? participant.name : currentUser?.name,
+        status: 'ongoing',
+        startTime: new Date().toLocaleString(),
+        endTime: null
+      };
+      return [...prev, newCall];
     });
-  };
+  }, [currentUser?.id, currentUser?.name]);
 
-  const login = async (email, password) => {
+  const endVideoCall = useCallback(() => {
+    setVideoCallState(prev => {
+      if (prev.callStartTime) {
+        setVideoCallHistory(history => {
+          const ongoingCall = history.find(
+            call => call.status === 'ongoing' &&
+            (call.callerId === currentUser?.id || call.receiverId === currentUser?.id)
+          );
+          if (ongoingCall) {
+            return history.map(call =>
+              call.id === ongoingCall.id
+                ? { ...call, status: 'completed', endTime: new Date().toLocaleString() }
+                : call
+            );
+          }
+          return history;
+        });
+      }
+      return {
+        isInCall: false,
+        callParticipant: null,
+        isAudioEnabled: true,
+        isVideoEnabled: true,
+        callStartTime: null
+      };
+    });
+  }, [currentUser?.id]);
+
+  const login = useCallback(async (email, password) => {
     try {
-      // Try hardcoded users first (for demo)
       const user = users.find(u => u.email === email && u.password === password);
       if (user) {
         setCurrentUser(user);
@@ -302,15 +338,9 @@ export function AppProvider({ children }) {
         return { success: true, data: user };
       }
 
-      // Try Supabase auth
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      
-      // Get profile
+
       const { data: profile } = await getProfile(data.user.id);
       const fullUser = {
         id: data.user.id,
@@ -319,7 +349,6 @@ export function AppProvider({ children }) {
         role: profile?.role || 'patient',
         ...profile
       };
-      
       setCurrentUser(fullUser);
       localStorage.setItem('currentUser', JSON.stringify(fullUser));
       return { success: true, data: fullUser };
@@ -327,19 +356,20 @@ export function AppProvider({ children }) {
       console.error('Login error:', error);
       return { success: false, error: error.message };
     }
-  };
+  }, [users]);
 
-
-  const logout = async () => {
-    await supabase.auth.signOut();
+  const logout = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error('Supabase logout error:', err);
+    }
     setCurrentUser(null);
     localStorage.removeItem('currentUser');
-  };
+  }, []);
 
-  // Supabase Appointment functions (async)
-  const addAppointment = async (appointmentData) => {
+  const addAppointment = useCallback(async (appointmentData) => {
     try {
-      // Validate required fields
       if (
         !appointmentData.patientId ||
         !appointmentData.providerId ||
@@ -350,21 +380,18 @@ export function AppProvider({ children }) {
         throw new Error('Missing required fields');
       }
 
-      // Skip UUID validation for demo/hardcoded users (numbers instead of UUIDs)
-      // UUID validation can be re-enabled when using real Supabase UUIDs
       if (typeof appointmentData.patientId !== 'string' || typeof appointmentData.providerId !== 'string') {
-        console.warn('Non-UUID IDs detected (using demo data)');
+        if (IS_DEV) console.warn('Non-UUID IDs detected (using demo data)');
       }
 
-      // Prepare data for Supabase
       const supabaseData = {
         patient_id: appointmentData.patientId,
         patient_name: appointmentData.patientName,
         provider_id: appointmentData.providerId,
         provider_name: appointmentData.providerName,
         service: appointmentData.service,
-        date: appointmentData.date, // YYYY-MM-DD
-        time: appointmentData.time, // HH:MM or HH:MM:SS
+        date: appointmentData.date,
+        time: appointmentData.time,
         notes: appointmentData.notes || null,
         price: Number(appointmentData.price),
         type: appointmentData.type || 'home',
@@ -372,20 +399,13 @@ export function AppProvider({ children }) {
         payment_status: 'pending'
       };
 
-      console.log('Sending to Supabase:', supabaseData);
+      if (IS_DEV) console.log('Sending to Supabase:', supabaseData);
       const { success, data, error } = await createAppointment(supabaseData);
-      if (!success) {
-        throw error;
-      }
-      // Map back and add to state
-      const newApt = {
-        ...data,
-        patientId: data.patient_id,
-        providerId: data.provider_id,
-      };
+      if (!success) throw error;
+
+      const newApt = { ...data, patientId: data.patient_id, providerId: data.provider_id };
       setAppointments(prev => [newApt, ...prev]);
 
-      // Add provider notification
       addNotification({
         userId: appointmentData.providerId,
         title: 'New Appointment Request',
@@ -398,41 +418,35 @@ export function AppProvider({ children }) {
       console.error('addAppointment error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const updateAppointment = async (id, updates) => {
+  const updateAppointmentFn = useCallback(async (id, updates) => {
     try {
       const { success, data } = await updateAppointment(id, updates);
       if (success) {
-        setAppointments(prev => prev.map(apt => apt.id === id ? {
-          ...apt,
-          ...data
-        } : apt));
+        setAppointments(prev => prev.map(apt => apt.id === id ? { ...apt, ...data } : apt));
       }
       return success;
     } catch (error) {
       console.error('updateAppointment error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  const cancelAppointment = async (id) => {
-    return await updateAppointment(id, { status: 'Cancelled' });
-  };
+  const cancelAppointmentFn = useCallback(async (id) => {
+    return await updateAppointmentFn(id, { status: 'Cancelled' });
+  }, [updateAppointmentFn]);
 
-  // Medical Records functions
-  const addMedicalRecord = (record) => {
+  const addMedicalRecord = useCallback((record) => {
     const newRecord = { ...record, id: medicalRecords.length + 1, date: new Date().toISOString().split('T')[0] };
-    setMedicalRecords([...medicalRecords, newRecord]);
+    setMedicalRecords(prev => [...prev, newRecord]);
     return newRecord;
-  };
+  }, [medicalRecords.length]);
 
-  // Prescription functions
-  const addPrescription = (prescription) => {
+  const addPrescription = useCallback((prescription) => {
     const newPrescription = { ...prescription, id: prescriptions.length + 1, date: new Date().toISOString().split('T')[0], status: 'Active' };
-    setPrescriptions([...prescriptions, newPrescription]);
-    
-    // Add notification for patient
+    setPrescriptions(prev => [...prev, newPrescription]);
+
     const patientNotification = {
       id: notifications.length + 1,
       userId: prescription.patientId,
@@ -442,88 +456,86 @@ export function AppProvider({ children }) {
       read: false,
       type: 'prescription'
     };
-    setNotifications([patientNotification, ...notifications]);
-    
+    setNotifications(prev => [patientNotification, ...prev]);
+
     return newPrescription;
-  };
+  }, [prescriptions.length, notifications.length]);
 
-  const deletePrescription = (id) => {
-    setPrescriptions((prev) => (prev || []).filter(p => p.id !== id));
-  };
+  const deletePrescription = useCallback((id) => {
+    setPrescriptions(prev => (prev || []).filter(p => p.id !== id));
+  }, []);
 
-  // Notification functions
-  const markNotificationRead = (id) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, read: true } : n));
-  };
+  const markNotificationRead = useCallback((id) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  }, []);
 
-  const markAllNotificationsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, read: true })));
-  };
+  const markAllNotificationsRead = useCallback(() => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }, []);
 
-  const addNotification = (notification) => {
-    const newNotification = { ...notification, id: notifications.length + 1, time: 'Just now', read: false };
-    setNotifications([newNotification, ...notifications]);
-  };
+  const addNotification = useCallback((notification) => {
+    setNotifications(prev => {
+      const newNotification = { ...notification, id: (prev.length || 0) + 1, time: 'Just now', read: false };
+      return [newNotification, ...prev];
+    });
+  }, []);
 
-  // Message functions
-  const sendMessage = (message) => {
-    const newMessage = { ...message, id: messages.length + 1, timestamp: new Date().toLocaleString(), read: false };
-    setMessages([...messages, newMessage]);
-    
-    // Add notification for recipient
-    const newNotification = {
-      id: notifications.length + 1,
-      userId: message.toId,
-      title: 'New Message',
-      message: `You have a new message from ${message.fromName}`,
-      time: 'Just now',
-      read: false,
-      type: 'message'
-    };
-    setNotifications([newNotification, ...notifications]);
-    
-    return newMessage;
-  };
+  const sendMessage = useCallback((message) => {
+    setMessages(prev => {
+      const newMessage = { ...message, id: (prev.length || 0) + 1, timestamp: new Date().toLocaleString(), read: false };
+      return [...prev, newMessage];
+    });
 
-  const getConversation = (userId1, userId2) => {
-    return messages.filter(m => 
-      (m.fromId === userId1 && m.toId === userId2) || 
+    setNotifications(prev => {
+      const newNotification = {
+        id: (prev.length || 0) + 1,
+        userId: message.toId,
+        title: 'New Message',
+        message: `You have a new message from ${message.fromName}`,
+        time: 'Just now',
+        read: false,
+        type: 'message'
+      };
+      return [newNotification, ...prev];
+    });
+  }, []);
+
+  const getConversation = useCallback((userId1, userId2) => {
+    return messages.filter(m =>
+      (m.fromId === userId1 && m.toId === userId2) ||
       (m.fromId === userId2 && m.toId === userId1)
     ).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-  };
+  }, [messages]);
 
-  // Review functions
-  const addReview = (review) => {
+  const addReview = useCallback((review) => {
     const newReview = { ...review, id: reviews.length + 1, date: new Date().toISOString().split('T')[0] };
-    setReviews([...reviews, newReview]);
+    setReviews(prev => [...prev, newReview]);
     return newReview;
-  };
+  }, [reviews.length]);
 
-  const getProviderReviews = (providerId) => {
+  const getProviderReviews = useCallback((providerId) => {
     return reviews.filter(r => r.providerId === providerId);
-  };
+  }, [reviews]);
 
-  // Video toggle functions
-  const toggleAudio = () => {
+  const toggleAudio = useCallback(() => {
     setVideoCallState(prev => ({ ...prev, isAudioEnabled: !prev.isAudioEnabled }));
-  };
+  }, []);
 
-  const toggleVideo = () => {
+  const toggleVideo = useCallback(() => {
     setVideoCallState(prev => ({ ...prev, isVideoEnabled: !prev.isVideoEnabled }));
-  };
+  }, []);
 
-  const getVideoCallHistory = () => videoCallHistory;
+  const getVideoCallHistory = useCallback(() => videoCallHistory, [videoCallHistory]);
 
-  // Search and filter functions
-  const searchDoctors = (query) => {
-    return users.filter(u => 
-      u.role === 'doctor' && 
-      (u.name.toLowerCase().includes(query.toLowerCase()) || 
+  const searchDoctors = useCallback((query) => {
+    return users.filter(u =>
+      u.role === 'doctor' &&
+      (u.name.toLowerCase().includes(query.toLowerCase()) ||
        u.specialty?.toLowerCase().includes(query.toLowerCase()))
     );
-  };
+  }, [users]);
 
-  const filterAppointments = (filters) => {
+  const filterAppointments = useCallback((filters) => {
     return appointments.filter(apt => {
       if (filters.status && apt.status !== filters.status) return false;
       if (filters.date && apt.date !== filters.date) return false;
@@ -532,16 +544,15 @@ export function AppProvider({ children }) {
       if (filters.providerId && apt.providerId !== filters.providerId) return false;
       return true;
     });
-  };
+  }, [appointments]);
 
-  // Analytics for admin
-  const getAnalytics = () => {
+  const getAnalytics = useCallback(() => {
     const patients = users.filter(u => u.role === 'patient');
     const doctors = users.filter(u => u.role === 'doctor');
     const nurses = users.filter(u => u.role === 'nurse');
     const confirmedAppointments = appointments.filter(a => a.status === 'Confirmed');
     const totalRevenue = confirmedAppointments.reduce((sum, apt) => sum + (apt.price || 0), 0);
-    
+
     return {
       totalPatients: patients.length,
       totalDoctors: doctors.length,
@@ -551,56 +562,37 @@ export function AppProvider({ children }) {
       pendingAppointments: appointments.filter(a => a.status === 'Pending').length,
       cancelledAppointments: appointments.filter(a => a.status === 'Cancelled').length,
       totalRevenue,
-      monthlyAppointments: appointments.filter(a => a.date.startsWith('2026-02')).length,
+      monthlyAppointments: appointments.filter(a => a.date?.startsWith('2026-02')).length,
       newUsersThisMonth: users.filter(u => u.joinDate?.startsWith('2026-02')).length
     };
-  };
+  }, [users, appointments]);
 
-  const value = {
-    // Users
+  const value = useMemo(() => ({
     users,
     currentUser,
     setCurrentUser,
-    login,
-    logout,
-    
-    // Providers
     providers,
-    
-    // Appointments
+    providersFetched,
+    refreshProviders,
     appointments,
     appointmentsLoading,
-    addAppointment,
-    updateAppointment,
-    cancelAppointment,
-    filterAppointments,
-    
-    // Medical Records
+    appointmentsFetched,
+    refreshAppointments,
     medicalRecords,
     addMedicalRecord,
-    
-    // Prescriptions
     prescriptions,
     addPrescription,
     deletePrescription,
-    
-    // Notifications
     notifications,
     markNotificationRead,
     markAllNotificationsRead,
     addNotification,
-    
-    // Messages
     messages,
     sendMessage,
     getConversation,
-    
-    // Reviews
     reviews,
     addReview,
     getProviderReviews,
-    
-    // Video Call
     videoCallState,
     videoCallHistory,
     startVideoCall,
@@ -608,13 +600,25 @@ export function AppProvider({ children }) {
     toggleAudio,
     toggleVideo,
     getVideoCallHistory,
-    
-    // Search
     searchDoctors,
-    
-    // Analytics
+    filterAppointments,
     getAnalytics,
-  };
+    login,
+    logout,
+    addAppointment,
+    updateAppointment: updateAppointmentFn,
+    cancelAppointment: cancelAppointmentFn,
+  }), [
+    users, currentUser, providers, providersFetched, refreshProviders,
+    appointments, appointmentsLoading, appointmentsFetched, refreshAppointments,
+    medicalRecords, addMedicalRecord, prescriptions, addPrescription, deletePrescription,
+    notifications, markNotificationRead, markAllNotificationsRead, addNotification,
+    messages, sendMessage, getConversation,
+    reviews, addReview, getProviderReviews,
+    videoCallState, videoCallHistory, startVideoCall, endVideoCall, toggleAudio, toggleVideo, getVideoCallHistory,
+    searchDoctors, filterAppointments, getAnalytics,
+    login, logout, addAppointment, updateAppointmentFn, cancelAppointmentFn
+  ]);
 
   return (
     <AppContext.Provider value={value}>

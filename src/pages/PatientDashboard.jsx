@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import './Dashboard.css';
@@ -6,11 +6,9 @@ import Navbar from '../components/Navbar';
 
 function PatientDashboard() {
   const navigate = useNavigate();
-  const { currentUser, users, appointments, medicalRecords, prescriptions, notifications, addAppointment, cancelAppointment, logout } = useApp();
+  const { currentUser, users, appointments, medicalRecords, prescriptions, notifications, cancelAppointment, logout } = useApp();
   const [activeTab, setActiveTab] = useState('overview');
-  // const [showBooking, setShowBooking] = useState(false); // Removed for dedicated booking page
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', content: '' });
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,31 +16,36 @@ function PatientDashboard() {
   const [recordFilter, setRecordFilter] = useState('');
   const [specialtyFilter, setSpecialtyFilter] = useState('');
   const [editingProfile, setEditingProfile] = useState(false);
-const [profileForm, setProfileForm] = useState({});
+  const [profileForm, setProfileForm] = useState({});
   const [toast, setToast] = useState({ message: '', type: '', visible: false });
 
-  // Toast function
-  const showToast = (message, type = 'success') => {
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type, visible: true });
     setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 4000);
-  };
+  }, []);
 
-  // Get user's appointments
-  const userAppointments = appointments.filter(apt => apt.patientId === currentUser?.id);
-  
-  // Get user's medical records
-  const userMedicalRecords = medicalRecords.filter(rec => rec.patientId === currentUser?.id);
-  
-  // Get user's prescriptions
-  const userPrescriptions = prescriptions.filter(pres => pres.patientId === currentUser?.id);
-  
-  // Get user's notifications
-  const userNotifications = notifications.filter(notif => notif.userId === currentUser?.id);
-  
-  // Get available doctors
-  const doctors = users.filter(u => u.role === 'doctor');
+  // Memoized derived data
+  const userAppointments = useMemo(() =>
+    appointments.filter(apt => apt.patientId === currentUser?.id),
+  [appointments, currentUser?.id]);
 
-  // Authentication check - redirect to login if not authenticated
+  const userMedicalRecords = useMemo(() =>
+    medicalRecords.filter(rec => rec.patientId === currentUser?.id),
+  [medicalRecords, currentUser?.id]);
+
+  const userPrescriptions = useMemo(() =>
+    prescriptions.filter(pres => pres.patientId === currentUser?.id),
+  [prescriptions, currentUser?.id]);
+
+  const userNotifications = useMemo(() =>
+    notifications.filter(notif => notif.userId === currentUser?.id),
+  [notifications, currentUser?.id]);
+
+  const doctors = useMemo(() =>
+    users.filter(u => u.role === 'doctor'),
+  [users]);
+
+  // Auth check
   useEffect(() => {
     if (!currentUser) {
       navigate('/login');
@@ -65,27 +68,7 @@ const [profileForm, setProfileForm] = useState({});
     });
   }, [currentUser]);
 
-  // const [bookingForm, setBookingForm] = useState({
-  //   service: '',
-  //   providerId: '',
-  //   date: '',
-  //   time: '',
-  //   notes: ''
-  // }); // Removed for dedicated booking page
-
-  // const servicePrices = {
-  //   'General Consultation': 50,
-  //   'Nursing Care': 40,
-  //   'Physical Therapy': 60,
-  //   'Medical Tests': 30,
-  //   'Elderly Care': 80,
-  //   'Post-Surgery Care': 70
-  // }; // Moved to BookAppointment
-
-// const handleBookingChange = (e) => { ... }; // Removed for dedicated booking page
-  // const handleBookingSubmit = (e) => { ... }; // Removed for dedicated booking page
-
-  const handleViewAppointment = (apt) => {
+  const handleViewAppointment = useCallback((apt) => {
     setModalContent({
       title: 'Appointment Details',
       content: (
@@ -102,20 +85,20 @@ const [profileForm, setProfileForm] = useState({});
       )
     });
     setShowModal(true);
-  };
+  }, []);
 
-  const handleCancelAppointment = (id) => {
+  const handleCancelAppointment = useCallback((id) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
       cancelAppointment(id);
       alert('Appointment cancelled successfully!');
     }
-  };
+  }, [cancelAppointment]);
 
-  const handleBookDoctor = (doc) => {
+  const handleBookDoctor = useCallback((doc) => {
     navigate('/book-appointment', { state: { prefill: { service: doc.specialty || 'General Consultation', providerId: doc.id } } });
-  };
+  }, [navigate]);
 
-  const handleViewRecord = (record) => {
+  const handleViewRecord = useCallback((record) => {
     setModalContent({
       title: record.title,
       content: (
@@ -129,9 +112,9 @@ const [profileForm, setProfileForm] = useState({});
       )
     });
     setShowModal(true);
-  };
+  }, []);
 
-const handleViewPrescription = (prescription) => {
+  const handleViewPrescription = useCallback((prescription) => {
     setModalContent({
       title: 'Prescription Details',
       content: (
@@ -153,13 +136,12 @@ const handleViewPrescription = (prescription) => {
       )
     });
     setShowModal(true);
-  };
+  }, []);
 
-
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await logout();
-      localStorage.removeItem('currentUser'); // Clear app-specific session
+      localStorage.removeItem('currentUser');
       navigate('/login');
       showToast('Logged out successfully', 'success');
     } catch (error) {
@@ -167,31 +149,43 @@ const handleViewPrescription = (prescription) => {
       localStorage.removeItem('currentUser');
       navigate('/login');
     }
-  };
+  }, [logout, navigate, showToast]);
 
+  // Memoized filtered lists
+  const filteredAppointments = useMemo(() => {
+    return userAppointments.filter(apt => {
+      if (statusFilter && apt.status !== statusFilter) return false;
+      if (searchQuery && !apt.service.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    });
+  }, [userAppointments, statusFilter, searchQuery]);
 
-  // Filter functions
-  const filteredAppointments = userAppointments.filter(apt => {
-    if (statusFilter && apt.status !== statusFilter) return false;
-    if (searchQuery && !apt.service.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
+  const filteredRecords = useMemo(() => {
+    return userMedicalRecords.filter(rec => {
+      if (recordFilter && rec.type !== recordFilter) return false;
+      if (searchQuery && !rec.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    });
+  }, [userMedicalRecords, recordFilter, searchQuery]);
 
-  const filteredRecords = userMedicalRecords.filter(rec => {
-    if (recordFilter && rec.type !== recordFilter) return false;
-    if (searchQuery && !rec.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
-
-  const filteredDoctors = doctors.filter(doc => {
-    if (specialtyFilter && doc.specialty !== specialtyFilter) return false;
-    if (searchQuery && !doc.name.toLowerCase().includes(searchQuery.toLowerCase()) && 
-        !doc.specialty?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    return true;
-  });
+  const filteredDoctors = useMemo(() => {
+    return doctors.filter(doc => {
+      if (specialtyFilter && doc.specialty !== specialtyFilter) return false;
+      if (searchQuery && !doc.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+          !doc.specialty?.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    });
+  }, [doctors, specialtyFilter, searchQuery]);
 
   if (!currentUser || !currentUser.id) {
-    return <div className="loading">Loading profile...</div>;
+    return (
+      <div className="dashboard">
+        <div className="loading" style={{ padding: '2rem', textAlign: 'center' }}>
+          <div className="spinner" style={{ marginBottom: '1rem' }}>⟳</div>
+          Loading your dashboard...
+        </div>
+      </div>
+    );
   }
 
   const renderContent = () => {
@@ -225,8 +219,6 @@ const handleViewPrescription = (prescription) => {
                   + Book New
                 </button>
               </div>
-              
-  {/* Inline booking form removed - use dedicated /book-appointment page */}
 
               {userAppointments.length > 0 ? (
                 <table className="appointments-table">
@@ -302,10 +294,10 @@ const handleViewPrescription = (prescription) => {
               </button>
             </div>
             <div className="search-filter">
-              <input 
-                type="text" 
-                className="search-input" 
-                placeholder="Search appointments..." 
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search appointments..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -362,10 +354,10 @@ const handleViewPrescription = (prescription) => {
           <section>
             <h2>Medical Records & Prescriptions</h2>
             <div className="search-filter">
-              <input 
-                type="text" 
-                className="search-input" 
-                placeholder="Search records..." 
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search records..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -395,7 +387,7 @@ const handleViewPrescription = (prescription) => {
                   <p className="no-data">No medical records found</p>
                 )}
               </div>
-              
+
               <h3 style={{marginTop: '2rem'}}>Prescriptions</h3>
               <div className="cards-grid">
                 {userPrescriptions.length > 0 ? (
@@ -422,10 +414,10 @@ const handleViewPrescription = (prescription) => {
           <section>
             <h2>Find Doctors</h2>
             <div className="search-filter">
-              <input 
-                type="text" 
-                className="search-input" 
-                placeholder="Search by name or specialty..." 
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search by name or specialty..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -592,7 +584,7 @@ const handleViewPrescription = (prescription) => {
       <button className="menu-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
         ☰
       </button>
-      
+
       <aside className={`sidebar ${sidebarOpen ? 'active' : ''}`}>
         <div className="sidebar-header">
           <h2>HomeCare</h2>
@@ -600,16 +592,14 @@ const handleViewPrescription = (prescription) => {
         </div>
         <nav className="sidebar-nav">
           <a href="#overview" className={activeTab === 'overview' ? 'active' : ''} onClick={() => {setActiveTab('overview'); setSidebarOpen(false);}}>Dashboard</a>
-
           <a href="#appointments" className={activeTab === 'appointments' ? 'active' : ''} onClick={() => {setActiveTab('appointments'); setSidebarOpen(false);}}>My Appointments</a>
           <Link to="/dashboard/patient/payment" className="sidebar-link" onClick={() => setSidebarOpen(false)}>💳 Payments</Link>
-
           <a href="#records" className={activeTab === 'records' ? 'active' : ''} onClick={() => {setActiveTab('records'); setSidebarOpen(false);}}>Medical Records</a>
           <a href="#doctors" className={activeTab === 'doctors' ? 'active' : ''} onClick={() => {setActiveTab('doctors'); setSidebarOpen(false);}}>Find Doctors</a>
           <a href="#messages" className={activeTab === 'messages' ? 'active' : ''} onClick={() => {setActiveTab('messages'); setSidebarOpen(false);}}>Messages</a>
           <a href="#reviews" className={activeTab === 'reviews' ? 'active' : ''} onClick={() => {setActiveTab('reviews'); setSidebarOpen(false);}}>Reviews</a>
           <Link to="/profile" className="sidebar-link" onClick={() => setSidebarOpen(false)}>👤 My Profile</Link>
-<button className="sidebar-logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</button>
+          <button className="sidebar-logout" onClick={() => {handleLogout(); setSidebarOpen(false);}}>Logout</button>
         </nav>
       </aside>
 
@@ -626,7 +616,7 @@ const handleViewPrescription = (prescription) => {
           {toast.message}
         </div>
       )}
-      
+
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -645,3 +635,4 @@ const handleViewPrescription = (prescription) => {
 }
 
 export default PatientDashboard;
+

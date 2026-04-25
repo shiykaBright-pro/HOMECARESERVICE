@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-24T23:03:05.891Z",
+  "generatedAt": "2026-04-25T00:26:17.145Z",
   "workspaceRoot": "HOMECARESERVICE",
   "stats": {
-    "filesIndexed": 70,
+    "filesIndexed": 71,
     "edgesIndexed": 54
   },
   "nodes": [
@@ -170,6 +170,14 @@
       "path": "TODO-PAYMENT.md",
       "lang": "md",
       "summary": "# Payment Page Feature TODO - [x] Step 1: Update AppContext.jsx - Add `payment_status: 'pending'` to all initialAppointments - [x] Step 2: Create src/pages/Payment.jsx - Full Payment page component with methods, currencies, flow - [x] Step ",
+      "imports": [],
+      "exports": []
+    },
+    {
+      "id": "TODO-PERFORMANCE-OPTIMIZATION.md",
+      "path": "TODO-PERFORMANCE-OPTIMIZATION.md",
+      "lang": "md",
+      "summary": "# Performance Optimization TODO ## Phase 1: Core Context & Data Layer (`src/context/AppContext.jsx`, `src/supabaseClient.js`) - [ ] Wrap context `value` with `useMemo` to prevent unnecessary re-renders - [ ] Wrap exported functions with `us",
       "imports": [],
       "exports": []
     },
@@ -406,7 +414,7 @@
       "id": "src/context/AppContext.jsx",
       "path": "src/context/AppContext.jsx",
       "lang": "jsx",
-      "summary": "import { createContext, useContext, useState, useEffect, useCallback } from 'react'; import { supabase, getProfile } from '../supabaseClient'; import { fetchAppointments, createAppointment, updateAppointment, cancelAppointment } from '../su",
+      "summary": "import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'; import { supabase, getProfile } from '../supabaseClient'; import { fetchAppointments, createAppointment, updateAppointment, cancelAppointm",
       "imports": [
         "react",
         "../supabaseClient"
@@ -499,7 +507,7 @@
       "id": "src/pages/DoctorDashboard.jsx",
       "path": "src/pages/DoctorDashboard.jsx",
       "lang": "jsx",
-      "summary": "import { useState, useEffect } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import { supabase } from '../supabaseClient'; import './Dashboard.css'; function DoctorDashbo",
+      "summary": "import { useState, useEffect, useMemo, useCallback } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import { supabase } from '../supabaseClient'; import './Dashboard.css';",
       "imports": [
         "react",
         "react-router-dom",
@@ -620,7 +628,7 @@
       "id": "src/pages/PatientDashboard.jsx",
       "path": "src/pages/PatientDashboard.jsx",
       "lang": "jsx",
-      "summary": "import { useState, useEffect } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import './Dashboard.css'; import Navbar from '../components/Navbar'; function PatientDashboar",
+      "summary": "import { useState, useEffect, useMemo, useCallback } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import './Dashboard.css'; import Navbar from '../components/Navbar'; fu",
       "imports": [
         "react",
         "react-router-dom",

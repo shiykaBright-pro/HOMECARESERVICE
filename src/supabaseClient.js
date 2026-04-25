@@ -2,11 +2,14 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://czudhvjomegowmnhnrda.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_wVyLnD7qg57JZtXd9Wm0xA_9CAg6glC';
+const IS_DEV = process.env.NODE_ENV === 'development';
 
-console.log('Supabase client init:', { 
-  url: supabaseUrl ? '✅ Loaded' : '❌ Missing - using fallback', 
-  key: supabaseAnonKey ? '✅ Loaded' : '❌ Missing - using fallback' 
-});
+if (IS_DEV) {
+  console.log('Supabase client init:', {
+    url: supabaseUrl ? '✅ Loaded' : '❌ Missing - using fallback',
+    key: supabaseAnonKey ? '✅ Loaded' : '❌ Missing - using fallback'
+  });
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -29,7 +32,7 @@ export const signInWithGoogle = async () => {
       throw error;
     }
 
-    console.log("Google OAuth initiated:", data);
+    if (IS_DEV) console.log("Google OAuth initiated:", data);
     return data;
   } catch (error) {
     console.error("Error signing in with Google:", error);
@@ -41,14 +44,14 @@ export const signInWithGoogle = async () => {
 export const handleOAuthCallback = async () => {
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
-    
+
     if (error) {
       console.error("OAuth callback error:", error);
       throw error;
     }
 
     if (session?.user) {
-      console.log("OAuth session established:", session.user);
+      if (IS_DEV) console.log("OAuth session established:", session.user);
       return session.user;
     }
 
@@ -62,9 +65,8 @@ export const handleOAuthCallback = async () => {
 // Test function to verify database connection and insert capability
 export const testDatabaseConnection = async () => {
   try {
-    console.log("Testing database connection...");
+    if (IS_DEV) console.log("Testing database connection...");
 
-    // Test 1: Check if we can connect to Supabase
     const { data: connectionTest, error: connectionError } = await supabase
       .from('profiles')
       .select('count', { count: 'exact', head: true });
@@ -74,9 +76,8 @@ export const testDatabaseConnection = async () => {
       return { success: false, error: connectionError };
     }
 
-    console.log("Connection successful, row count:", connectionTest);
+    if (IS_DEV) console.log("Connection successful, row count:", connectionTest);
 
-    // Test 2: Try to insert a test record (this will fail if RLS is blocking)
     const testData = {
       id: 'test-' + Date.now(),
       name: 'Test User',
@@ -95,7 +96,7 @@ export const testDatabaseConnection = async () => {
       return { success: false, error: insertError, connectionOk: true };
     }
 
-    console.log("Insert test successful:", insertData);
+    if (IS_DEV) console.log("Insert test successful:", insertData);
     return { success: true, data: insertData };
 
   } catch (error) {
@@ -107,14 +108,13 @@ export const testDatabaseConnection = async () => {
 // Profile management functions
 export const saveProfile = async (userId, profileData) => {
   try {
-    console.log("Saving profile for user:", userId, profileData);
+    if (IS_DEV) console.log("Saving profile for user:", userId, profileData);
 
-    // Validate and normalize role
     const validRoles = ['admin', 'doctor', 'nurse', 'patient'];
     const role = profileData.role?.trim().toLowerCase();
-    
-    console.log('Validating role before insert:', { raw: profileData.role, normalized: role });
-    
+
+    if (IS_DEV) console.log('Validating role before insert:', { raw: profileData.role, normalized: role });
+
     if (!role || !validRoles.includes(role)) {
       throw new Error(`Invalid role: "${profileData.role}". Must be one of: ${validRoles.join(', ')}`);
     }
@@ -125,7 +125,7 @@ export const saveProfile = async (userId, profileData) => {
         id: userId,
         name: profileData.name?.trim() || 'Unknown',
         email: profileData.email?.trim() || '',
-        role: role,  // Validated lowercase role
+        role: role,
         license: profileData.license?.trim() || null,
         specialty: profileData.specialty?.trim() || null
       });
@@ -135,7 +135,7 @@ export const saveProfile = async (userId, profileData) => {
       throw error;
     }
 
-    console.log("✅ Profile saved successfully with role:", role, data);
+    if (IS_DEV) console.log("✅ Profile saved successfully with role:", role, data);
     return { success: true, data };
 
   } catch (error) {
@@ -147,32 +147,30 @@ export const saveProfile = async (userId, profileData) => {
 
 export const getProfile = async (userId) => {
   try {
-    console.log("Fetching profile for user:", userId);
+    if (IS_DEV) console.log("Fetching profile for user:", userId);
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, name, email, role, license, specialty, created_at')
       .eq('id', userId)
       .single();
 
     if (error && error.code === 'PGRST116') {
-      // Profile not found - auto-create minimal profile
-      console.log("Profile not found, auto-creating...");
+      if (IS_DEV) console.log("Profile not found, auto-creating...");
       const createResult = await saveProfile(userId, {
-        email: userId + '@fallback.com', // Minimal required
+        email: userId + '@fallback.com',
         role: 'patient',
         name: 'Patient User'
       });
-      
+
       if (!createResult.success) {
         console.error("Auto-create failed:", createResult.error);
         return { success: false, data: null, error: 'Profile fetch failed' };
       }
 
-      // Retry fetch after create
       const { data: retryData, error: retryError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, name, email, role, license, specialty, created_at')
         .eq('id', userId)
         .single();
 
@@ -181,7 +179,7 @@ export const getProfile = async (userId) => {
         return { success: false, data: null, error: retryError };
       }
 
-      console.log("Auto-created profile fetched:", retryData);
+      if (IS_DEV) console.log("Auto-created profile fetched:", retryData);
       return { success: true, data: retryData };
     }
 
@@ -190,7 +188,7 @@ export const getProfile = async (userId) => {
       throw error;
     }
 
-    console.log("Profile fetched:", data);
+    if (IS_DEV) console.log("Profile fetched:", data);
     return { success: true, data };
 
   } catch (error) {
@@ -205,11 +203,12 @@ export const getProfile = async (userId) => {
  */
 export const fetchAppointments = async (userId, role = 'patient') => {
   try {
-    console.log(`Fetching appointments for ${role}:`, userId);
-    
+    if (IS_DEV) console.log(`Fetching appointments for ${role}:`, userId);
+    if (IS_DEV) console.time('supabase_fetchAppointments');
+
     let query = supabase
       .from('appointments')
-      .select('*')
+      .select('id, patient_id, patient_name, provider_id, provider_name, service, date, time, status, payment_status, type, notes, price, created_at')
       .order('created_at', { ascending: false });
 
     if (role === 'patient') {
@@ -219,13 +218,14 @@ export const fetchAppointments = async (userId, role = 'patient') => {
     }
 
     const { data, error } = await query;
+    if (IS_DEV) console.timeEnd('supabase_fetchAppointments');
 
     if (error) {
       console.error('Fetch appointments error:', error);
       throw error;
     }
 
-    console.log(`${data?.length || 0} appointments fetched`);
+    if (IS_DEV) console.log(`${data?.length || 0} appointments fetched`);
     return { success: true, data: data || [] };
   } catch (error) {
     console.error('Error fetching appointments:', error);
@@ -238,7 +238,7 @@ export const fetchAppointments = async (userId, role = 'patient') => {
  */
 export const createAppointment = async (appointmentData) => {
   try {
-    console.log('Creating appointment:', appointmentData);
+    if (IS_DEV) console.log('Creating appointment:', appointmentData);
 
     const { data, error } = await supabase
       .from('appointments')
@@ -264,7 +264,7 @@ export const createAppointment = async (appointmentData) => {
       throw error;
     }
 
-    console.log('Appointment created:', data);
+    if (IS_DEV) console.log('Appointment created:', data);
     return { success: true, data };
   } catch (error) {
     console.error('Error creating appointment:', error);
@@ -277,13 +277,11 @@ export const createAppointment = async (appointmentData) => {
  */
 export const updateAppointment = async (id, updates) => {
   try {
-    console.log('Updating appointment', id, updates);
+    if (IS_DEV) console.log('Updating appointment', id, updates);
 
     const { data, error } = await supabase
       .from('appointments')
-      .update({
-        ...updates,
-      })
+      .update({ ...updates })
       .eq('id', id)
       .select()
       .single();
@@ -293,7 +291,7 @@ export const updateAppointment = async (id, updates) => {
       throw error;
     }
 
-    console.log('Appointment updated:', data);
+    if (IS_DEV) console.log('Appointment updated:', data);
     return { success: true, data };
   } catch (error) {
     console.error('Error updating appointment:', error);
@@ -306,7 +304,7 @@ export const updateAppointment = async (id, updates) => {
  */
 export const cancelAppointment = async (id) => {
   try {
-    console.log('Cancelling appointment:', id);
+    if (IS_DEV) console.log('Cancelling appointment:', id);
     return await updateAppointment(id, { status: 'Cancelled' });
   } catch (error) {
     console.error('Error cancelling appointment:', error);
@@ -319,7 +317,7 @@ export const cancelAppointment = async (id) => {
  */
 export const deleteAppointment = async (id) => {
   try {
-    console.log('Deleting appointment:', id);
+    if (IS_DEV) console.log('Deleting appointment:', id);
     const { data, error } = await supabase
       .from('appointments')
       .delete()
@@ -330,12 +328,11 @@ export const deleteAppointment = async (id) => {
       throw error;
     }
 
-    console.log('Appointment deleted');
+    if (IS_DEV) console.log('Appointment deleted');
     return { success: true, data };
   } catch (error) {
     console.error('Error deleting appointment:', error);
     return { success: false, error };
   }
 };
-
 
