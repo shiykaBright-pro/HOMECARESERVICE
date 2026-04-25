@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-25T00:26:17.145Z",
+  "generatedAt": "2026-04-25T05:52:38.480Z",
   "workspaceRoot": "HOMECARESERVICE",
   "stats": {
-    "filesIndexed": 71,
+    "filesIndexed": 72,
     "edgesIndexed": 54
   },
   "nodes": [
@@ -26,6 +26,14 @@
       "path": "index.html",
       "lang": "html",
       "summary": "<!doctype html> <html lang=\"en\"> <head> <meta charset=\"UTF-8\" /> <link rel=\"icon\" type=\"image/svg+xml\" href=\"/vite.svg\" /> <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />",
+      "imports": [],
+      "exports": []
+    },
+    {
+      "id": "original_doctor.jsx",
+      "path": "original_doctor.jsx",
+      "lang": "jsx",
+      "summary": "��i\u0000m\u0000p\u0000o\u0000r\u0000t\u0000 \u0000{\u0000 \u0000u\u0000s\u0000e\u0000S\u0000t\u0000a\u0000t\u0000e\u0000,\u0000 \u0000u\u0000s\u0000e\u0000E\u0000f\u0000f\u0000e\u0000c\u0000t\u0000 \u0000}\u0000 \u0000f\u0000r\u0000o\u0000m\u0000 \u0000'\u0000r\u0000e\u0000a\u0000c\u0000t\u0000'\u0000;\u0000 \u0000 \u0000i\u0000m\u0000p\u0000o\u0000r\u0000t\u0000 \u0000{\u0000 \u0000L\u0000i\u0000n\u0000k\u0000,\u0000 \u0000u\u0000s\u0000e\u0000N\u0000a\u0000v\u0000i\u0000g\u0000a\u0000t\u0000e\u0000 \u0000}\u0000 \u0000f\u0000r\u0000o\u0000m\u0000 \u0000'\u0000r\u0000e\u0000a\u0000c\u0000t\u0000-\u0000r\u0000o\u0000u\u0000t\u0000e\u0000r\u0000-\u0000d\u0000o\u0000m\u0000'\u0000;\u0000 \u0000 \u0000i\u0000m\u0000p\u0000o\u0000r\u0000t\u0000 \u0000{\u0000 \u0000u\u0000s\u0000e\u0000A\u0000p\u0000p\u0000 \u0000}\u0000 \u0000",
       "imports": [],
       "exports": []
     },
@@ -236,7 +244,7 @@
       "id": ".vercel/project.json",
       "path": ".vercel/project.json",
       "lang": "json",
-      "summary": "{\"projectId\":\"prj_c53jPLkBcSirQ08nswcjlqwNZoDe\",\"orgId\":\"team_OezOd9Y3heAKsB2rjI8suWv8\",\"projectName\":\"homecareservice\"}",
+      "summary": "{\"projectId\":\"prj_XIgH8hAvSvwzR2OoZPMcK8XpaqTL\",\"orgId\":\"team_OezOd9Y3heAKsB2rjI8suWv8\",\"projectName\":\"homecareservices\"}",
       "imports": [],
       "exports": []
     },
@@ -507,7 +515,7 @@
       "id": "src/pages/DoctorDashboard.jsx",
       "path": "src/pages/DoctorDashboard.jsx",
       "lang": "jsx",
-      "summary": "import { useState, useEffect, useMemo, useCallback } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import { supabase } from '../supabaseClient'; import './Dashboard.css';",
+      "summary": "import { useState, useEffect } from 'react'; import { Link, useNavigate } from 'react-router-dom'; import { useApp } from '../context/AppContext'; import { supabase } from '../supabaseClient'; import './Dashboard.css'; function DoctorDashbo",
       "imports": [
         "react",
         "react-router-dom",

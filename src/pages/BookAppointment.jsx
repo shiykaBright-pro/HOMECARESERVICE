@@ -86,6 +86,9 @@ function BookAppointment() {
         price: servicePrices[formData.service] || 50
       };
 
+      console.log("USER:", currentUser);
+      console.log("APPOINTMENT DATA:", formData);
+
       await addAppointment(newAppointment);
       setSuccess(true);
       setTimeout(() => navigate('/dashboard/patient'), 2000);
