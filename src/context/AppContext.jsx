@@ -370,42 +370,88 @@ export function AppProvider({ children }) {
 
   const addAppointment = useCallback(async (appointmentData) => {
     try {
-      if (
-        !appointmentData.patientId ||
-        !appointmentData.providerId ||
-        !appointmentData.service ||
-        !appointmentData.date ||
-        !appointmentData.time
-      ) {
-        throw new Error('Missing required fields');
+      console.log('========== CONTEXT: addAppointment() ==========');
+      
+      // VALIDATION: Check all required fields
+      console.log('📋 VALIDATING APPOINTMENT DATA:');
+      const requiredFields = {
+        patientId: appointmentData.patientId,
+        providerId: appointmentData.providerId,
+        service: appointmentData.service,
+        date: appointmentData.date,
+        time: appointmentData.time
+      };
+
+      Object.entries(requiredFields).forEach(([field, value]) => {
+        const isValid = value !== null && value !== undefined && value !== '';
+        const status = isValid ? '✅' : '❌';
+        console.log(`  ${status} ${field}: "${value}" (Type: ${typeof value})`);
+      });
+
+      const missingFields = Object.entries(requiredFields)
+        .filter(([_, value]) => !value)
+        .map(([field]) => field);
+
+      if (missingFields.length > 0) {
+        const errorMsg = `Missing required fields: ${missingFields.join(', ')}`;
+        console.error(`❌ VALIDATION FAILED: ${errorMsg}`);
+        throw new Error(errorMsg);
       }
 
+      // Log data type checks
       if (typeof appointmentData.patientId !== 'string' || typeof appointmentData.providerId !== 'string') {
-        if (IS_DEV) console.warn('Non-UUID IDs detected (using demo data)');
+        if (IS_DEV) console.warn('⚠️ Non-UUID IDs detected (using demo data or local storage)');
       }
 
+      // BUILD SUPABASE INSERT OBJECT
       const supabaseData = {
         patient_id: appointmentData.patientId,
-        patient_name: appointmentData.patientName,
+        patient_name: appointmentData.patientName || 'Unknown',
         provider_id: appointmentData.providerId,
-        provider_name: appointmentData.providerName,
+        provider_name: appointmentData.providerName || 'To be assigned',
         service: appointmentData.service,
         date: appointmentData.date,
         time: appointmentData.time,
         notes: appointmentData.notes || null,
-        price: Number(appointmentData.price),
+        price: Number(appointmentData.price) || 0,
         type: appointmentData.type || 'home',
         status: 'Pending',
         payment_status: 'pending'
       };
 
-      if (IS_DEV) console.log('Sending to Supabase:', supabaseData);
+      console.log('📤 SUPABASE INSERT DATA:');
+      console.log(JSON.stringify(supabaseData, null, 2));
+
+      // DEBUG: Log each field type to catch data type mismatches
+      console.log('🔍 DATA TYPE VERIFICATION:');
+      console.log(`  - patient_id (${typeof supabaseData.patient_id}): ${supabaseData.patient_id}`);
+      console.log(`  - provider_id (${typeof supabaseData.provider_id}): ${supabaseData.provider_id}`);
+      console.log(`  - date (${typeof supabaseData.date}): ${supabaseData.date}`);
+      console.log(`  - time (${typeof supabaseData.time}): ${supabaseData.time}`);
+      console.log(`  - service (${typeof supabaseData.service}): ${supabaseData.service}`);
+
+      if (IS_DEV) console.log('Sending to Supabase...');
       const { success, data, error } = await createAppointment(supabaseData);
-      if (!success) throw error;
+      
+      if (!success) {
+        console.error('❌ SUPABASE INSERT FAILED:');
+        console.error('  Error Code:', error.code);
+        console.error('  Error Message:', error.message);
+        console.error('  Error Details:', error.details);
+        console.error('  Error Hint:', error.hint);
+        console.error('  Full Error:', JSON.stringify(error, null, 2));
+        throw error;
+      }
+
+      console.log('✅ APPOINTMENT SUCCESSFULLY CREATED IN SUPABASE:');
+      console.log('  ID:', data?.id);
+      console.log('  Status:', data?.status);
+      console.log('  Data:', JSON.stringify(data, null, 2));
 
       const newApt = { ...data, patientId: data.patient_id, providerId: data.provider_id };
       setAppointments(prev => [newApt, ...prev]);
 
+      // Add notification for provider
       addNotification({
         userId: appointmentData.providerId,
         title: 'New Appointment Request',
@@ -413,9 +459,12 @@ export function AppProvider({ children }) {
         type: 'appointment'
       });
 
+      console.log('===========================================');
       return newApt;
     } catch (error) {
-      console.error('addAppointment error:', error);
+      console.error('❌ addAppointment() CAUGHT ERROR:');
+      console.error('  Message:', error.message);
+      console.error('  Full Error:', JSON.stringify(error, null, 2));
       throw error;
     }
   }, []);

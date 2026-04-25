@@ -1,12 +1,28 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-25T05:52:38.480Z",
+  "generatedAt": "2026-04-25T06:49:16.038Z",
   "workspaceRoot": "HOMECARESERVICE",
   "stats": {
-    "filesIndexed": 72,
+    "filesIndexed": 74,
     "edgesIndexed": 54
   },
   "nodes": [
+    {
+      "id": "APPOINTMENT-DEBUG-QUICK-REFERENCE.md",
+      "path": "APPOINTMENT-DEBUG-QUICK-REFERENCE.md",
+      "lang": "md",
+      "summary": "# Appointment Flow - Quick Reference Card ## 🎯 What Was Improved ### 1. **BookAppointment.jsx** - Component-level validation & logging - ✅ Validates all required fields before submission - ✅ Logs user data (ID, email, name, role) - ✅ Logs ",
+      "imports": [],
+      "exports": []
+    },
+    {
+      "id": "APPOINTMENT-DEBUGGING-GUIDE.md",
+      "path": "APPOINTMENT-DEBUGGING-GUIDE.md",
+      "lang": "md",
+      "summary": "# Appointment Creation Flow - Debugging & Improvements Guide ## Overview The appointment creation flow has been enhanced with comprehensive logging and validation to help debug issues with appointment insertion into Supabase. This guide exp",
+      "imports": [],
+      "exports": []
+    },
     {
       "id": "eslint.config.js",
       "path": "eslint.config.js",

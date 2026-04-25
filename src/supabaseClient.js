@@ -221,11 +221,13 @@ export const fetchAppointments = async (userId, role = 'patient') => {
     if (IS_DEV) console.timeEnd('supabase_fetchAppointments');
 
     if (error) {
-      console.error('Fetch appointments error:', error);
+      console.error('❌ Fetch appointments error:', error);
+      console.error('  Code:', error.code);
+      console.error('  Message:', error.message);
       throw error;
     }
 
-    if (IS_DEV) console.log(`${data?.length || 0} appointments fetched`);
+    if (IS_DEV) console.log(`✅ ${data?.length || 0} appointments fetched for ${role} ${userId}`);
     return { success: true, data: data || [] };
   } catch (error) {
     console.error('Error fetching appointments:', error);
@@ -238,36 +240,83 @@ export const fetchAppointments = async (userId, role = 'patient') => {
  */
 export const createAppointment = async (appointmentData) => {
   try {
-    if (IS_DEV) console.log('Creating appointment:', appointmentData);
+    console.log('========== SUPABASE: createAppointment() ==========');
+    console.log('📝 INPUT DATA:');
+    console.log(JSON.stringify(appointmentData, null, 2));
+
+    // Validate input structure
+    const requiredFields = ['patient_id', 'provider_id', 'service', 'date', 'time'];
+    const missingFields = requiredFields.filter(field => 
+      appointmentData[field] === null || 
+      appointmentData[field] === undefined || 
+      appointmentData[field] === ''
+    );
+
+    if (missingFields.length > 0) {
+      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+    }
+
+    console.log('✅ All required fields present');
+    console.log('📤 Attempting INSERT into appointments table...');
+
+    const insertPayload = [{
+      patient_id: appointmentData.patient_id,
+      patient_name: appointmentData.patient_name,
+      provider_id: appointmentData.provider_id,
+      provider_name: appointmentData.provider_name,
+      service: appointmentData.service,
+      date: appointmentData.date,
+      time: appointmentData.time,
+      notes: appointmentData.notes || null,
+      price: appointmentData.price,
+      type: appointmentData.type || 'home',
+      status: appointmentData.status || 'Pending',
+      payment_status: appointmentData.payment_status || 'pending'
+    }];
+
+    console.log('📊 INSERT PAYLOAD:');
+    console.log(JSON.stringify(insertPayload, null, 2));
 
     const { data, error } = await supabase
       .from('appointments')
-      .insert([{
-        patient_id: appointmentData.patientId,
-        patient_name: appointmentData.patientName,
-        provider_id: appointmentData.providerId,
-        provider_name: appointmentData.providerName,
-        service: appointmentData.service,
-        date: appointmentData.date,
-        time: appointmentData.time,
-        notes: appointmentData.notes || null,
-        price: appointmentData.price,
-        type: appointmentData.type || 'home',
-        status: 'Pending',
-        payment_status: 'pending'
-      }])
+      .insert(insertPayload)
       .select()
       .single();
 
     if (error) {
-      console.error('Create appointment error:', error);
-      throw error;
+      console.error('❌ SUPABASE INSERT ERROR:');
+      console.error('  Code:', error.code);
+      console.error('  Message:', error.message);
+      console.error('  Details:', error.details);
+      console.error('  Hint:', error.hint);
+      console.error('  Status:', error.status);
+      console.error('  Full Error Object:', JSON.stringify(error, null, 2));
+      
+      // Return error details for better debugging
+      return { 
+        success: false, 
+        error: {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          status: error.status
+        }
+      };
     }
 
-    if (IS_DEV) console.log('Appointment created:', data);
+    console.log('✅ APPOINTMENT INSERTED SUCCESSFULLY');
+    console.log('  Returned Data:', JSON.stringify(data, null, 2));
+    console.log('  Appointment ID:', data?.id);
+    console.log('  Created At:', data?.created_at);
+    console.log('=================================================');
+    
     return { success: true, data };
   } catch (error) {
-    console.error('Error creating appointment:', error);
+    console.error('❌ EXCEPTION IN createAppointment():');
+    console.error('  Message:', error.message);
+    console.error('  Stack:', error.stack);
+    console.error('  Full Error:', JSON.stringify(error, null, 2));
     return { success: false, error };
   }
 };
@@ -277,7 +326,11 @@ export const createAppointment = async (appointmentData) => {
  */
 export const updateAppointment = async (id, updates) => {
   try {
-    if (IS_DEV) console.log('Updating appointment', id, updates);
+    if (IS_DEV) console.log('Updating appointment', id, 'with:', updates);
+
+    if (!id) {
+      throw new Error('Appointment ID is required for update');
+    }
 
     const { data, error } = await supabase
       .from('appointments')
@@ -287,11 +340,13 @@ export const updateAppointment = async (id, updates) => {
       .single();
 
     if (error) {
-      console.error('Update appointment error:', error);
+      console.error('❌ Update appointment error:', error);
+      console.error('  Code:', error.code);
+      console.error('  Message:', error.message);
       throw error;
     }
 
-    if (IS_DEV) console.log('Appointment updated:', data);
+    if (IS_DEV) console.log('✅ Appointment updated:', data);
     return { success: true, data };
   } catch (error) {
     console.error('Error updating appointment:', error);

@@ -63,8 +63,18 @@ function BookAppointment() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.providerId || !formData.service || !formData.date || !formData.time) {
-      setError('Please fill all required fields');
+    
+    // Validate required fields first
+    const missingFields = [];
+    if (!formData.providerId) missingFields.push('Provider');
+    if (!formData.service) missingFields.push('Service Type');
+    if (!formData.date) missingFields.push('Date');
+    if (!formData.time) missingFields.push('Time');
+
+    if (missingFields.length > 0) {
+      const errorMsg = `Please fill all required fields: ${missingFields.join(', ')}`;
+      setError(errorMsg);
+      console.warn('❌ Validation Error:', errorMsg);
       return;
     }
 
@@ -72,29 +82,93 @@ function BookAppointment() {
     setError('');
 
     try {
+      // DEBUG LOGGING - User data verification
+      console.log('========== APPOINTMENT SUBMISSION DEBUG ==========');
+      console.log('📋 USER DATA:');
+      console.log('  - User ID (user.id):', currentUser?.id);
+      console.log('  - User Email:', currentUser?.email);
+      console.log('  - User Name:', currentUser?.name);
+      console.log('  - User Role:', currentUser?.role);
+      console.log('  - User Object:', JSON.stringify(currentUser, null, 2));
+
+      // Validate user data
+      if (!currentUser?.id) {
+        throw new Error('❌ CRITICAL: User ID is missing or undefined. Cannot proceed with appointment.');
+      }
+
+      // DEBUG LOGGING - Form data verification
+      console.log('📝 FORM DATA:');
+      console.log('  - Provider ID:', formData.providerId);
+      console.log('  - Service Type:', formData.service);
+      console.log('  - Date:', formData.date);
+      console.log('  - Time:', formData.time);
+      console.log('  - Notes:', formData.notes);
+      console.log('  - Form Data Object:', JSON.stringify(formData, null, 2));
+
+      // Find provider and validate
       const provider = providers.find(u => u.id === formData.providerId);
+      if (!provider) {
+        throw new Error(`❌ Provider not found: ${formData.providerId}. Available providers: ${providers.map(p => p.id).join(', ')}`);
+      }
+      console.log('✅ Provider found:', provider.name);
+
+      // Build appointment object for Supabase
       const newAppointment = {
         patientId: currentUser.id,
-        patientName: currentUser.name,
+        patientName: currentUser.name || 'Unknown Patient',
         providerId: formData.providerId,
-        providerName: provider?.name || 'To be assigned',
+        providerName: provider.name || 'To be assigned',
         service: formData.service,
         date: formData.date,
         time: formData.time,
-        notes: formData.notes,
+        notes: formData.notes || null,
         type: 'home',
         price: servicePrices[formData.service] || 50
       };
 
-      console.log("USER:", currentUser);
-      console.log("APPOINTMENT DATA:", formData);
+      console.log('💾 APPOINTMENT OBJECT TO INSERT:');
+      console.log(JSON.stringify(newAppointment, null, 2));
 
+      // Verify all required fields are present and valid
+      const requiredFields = {
+        patientId: newAppointment.patientId,
+        providerId: newAppointment.providerId,
+        service: newAppointment.service,
+        date: newAppointment.date,
+        time: newAppointment.time
+      };
+
+      console.log('🔍 FIELD VALIDATION:');
+      Object.entries(requiredFields).forEach(([field, value]) => {
+        const isValid = value !== null && value !== undefined && value !== '';
+        const status = isValid ? '✅' : '❌';
+        console.log(`  ${status} ${field}: ${value} (Type: ${typeof value})`);
+      });
+
+      const invalidFields = Object.entries(requiredFields)
+        .filter(([_, value]) => value === null || value === undefined || value === '')
+        .map(([field]) => field);
+
+      if (invalidFields.length > 0) {
+        throw new Error(`❌ Invalid fields: ${invalidFields.join(', ')} - these cannot be empty.`);
+      }
+
+      console.log('📤 Calling addAppointment() to insert into Supabase...');
       await addAppointment(newAppointment);
+      
+      console.log('✅ Appointment successfully created!');
       setSuccess(true);
       setTimeout(() => navigate('/dashboard/patient'), 2000);
     } catch (err) {
-      setError(err.message || JSON.stringify(err, null, 2));
-      console.error('Full Supabase error:', JSON.stringify(err, null, 2));
+      const errorMessage = err.message || JSON.stringify(err, null, 2);
+      setError(errorMessage);
+      console.error('❌ APPOINTMENT CREATION ERROR:');
+      console.error('  Message:', err.message);
+      console.error('  Code:', err.code);
+      console.error('  Details:', err.details);
+      console.error('  Status:', err.status);
+      console.error('  Full Error:', JSON.stringify(err, null, 2));
+      console.log('==============================================');
     } finally {
       setSubmitting(false);
     }
